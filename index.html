@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESPressoFlash</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"> <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css"> <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="styles.css"> <!-- Custom CSS -->
+</head>
+<body>
+    <div class="container-fluid">
+        <header class="py-3 text-center">
+            <h1>ESPressoFlash</h1>
+            <p class="text-muted">Flash your ESP32 quickly and easily</p>
+        </header>
+
+        <main>
+            <div class="stepper-container"> <!-- Step navigation -->
+                <div class="stepper">
+                    <div class="stepper-item">
+                        <div class="stepper-circle active" id="stepper1">1</div>
+                        <div class="stepper-line"></div>
+                    </div>
+                    <div class="stepper-item">
+                        <div class="stepper-circle" id="stepper2">2</div>
+                        <div class="stepper-line"></div>
+                    </div>
+                    <div class="stepper-item">
+                        <div class="stepper-circle" id="stepper3">3</div>
+                        <div class="stepper-line"></div>
+                    </div>
+                    <div class="stepper-item">
+                        <div class="stepper-circle" id="stepper4">4</div>
+                    </div>
+                </div>
+                <div class="stepper-labels">
+                    <div>Select Device</div>
+                    <div>Connect</div>
+                    <div>Configure</div>
+                    <div>Flash</div>
+                </div>
+            </div>
+
+            <div class="step-container active" id="step1"> <!-- Step 1: Select Device -->
+                <h2>Select Your ESP32 Variant</h2>
+                <p>Choose the ESP32 variant you want to flash</p>
+                
+                <div class="row device-cards">
+                    <div class="col-md-4 mb-4">
+                        <div class="card device-card" data-device="ESP32">
+                            <div class="card-body">
+                                <h5 class="card-title device-name">ESP32</h5>
+                                <p class="card-text">Original ESP32 with dual core up to 240MHz</p>
+                                <div class="chip-details">
+                                    <span><i class="bi bi-cpu"></i> Dual Core</span>
+                                    <span><i class="bi bi-speedometer"></i> 240MHz</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card device-card" data-device="ESP32-S2">
+                            <div class="card-body">
+                                <h5 class="card-title device-name">ESP32-S2</h5>
+                                <p class="card-text">Single core with enhanced security features</p>
+                                <div class="chip-details">
+                                    <span><i class="bi bi-cpu"></i> Single Core</span>
+                                    <span><i class="bi bi-speedometer"></i> 240MHz</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card device-card" data-device="ESP32-S3">
+                            <div class="card-body">
+                                <h5 class="card-title device-name">ESP32-S3</h5>
+                                <p class="card-text">Dual core with AI acceleration and rich peripherals</p>
+                                <div class="chip-details">
+                                    <span><i class="bi bi-cpu"></i> Dual Core</span>
+                                    <span><i class="bi bi-speedometer"></i> 240MHz</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card device-card" data-device="ESP32-C3">
+                            <div class="card-body">
+                                <h5 class="card-title device-name">ESP32-C3</h5>
+                                <p class="card-text">RISC-V based low-power chip with Wi-Fi and Bluetooth LE</p>
+                                <div class="chip-details">
+                                    <span><i class="bi bi-cpu"></i> RISC-V</span>
+                                    <span><i class="bi bi-speedometer"></i> 160MHz</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card device-card" data-device="ESP32-C6">
+                            <div class="card-body">
+                                <h5 class="card-title device-name">ESP32-C6</h5>
+                                <p class="card-text">RISC-V based SoC with Wi-Fi 6 and Bluetooth 5 LE</p>
+                                <div class="chip-details">
+                                    <span><i class="bi bi-cpu"></i> RISC-V</span>
+                                    <span><i class="bi bi-speedometer"></i> 160MHz</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card device-card" data-device="ESP8266">
+                            <div class="card-body">
+                                <h5 class="card-title device-name">ESP8266</h5>
+                                <p class="card-text">Classic low-cost Wi-Fi module</p>
+                                <div class="chip-details">
+                                    <span><i class="bi bi-cpu"></i> Single Core</span>
+                                    <span><i class="bi bi-speedometer"></i> 80MHz</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="navigation-buttons">
+                    <button id="nextToStep2" class="btn btn-primary" disabled>
+                        <i class="bi bi-arrow-right"></i> Continue
+                    </button>
+                </div>
+            </div>
+
+            <div class="step-container" id="step2"> <!-- Step 2: Connect -->
+                <h2>Connect to <span id="selectedDeviceConnect"></span></h2>
+                <p>Connect your device to your computer via USB and click the Connect button</p>
+                
+                <div class="card settings-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Connection Settings</h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="baudrate" class="form-label">Baud Rate</label>
+                                <select id="baudrate" class="form-select">
+                                    <option selected value="115200">115200</option>
+                                    <option value="230400">230400</option>
+                                    <option value="460800">460800</option>
+                                    <option value="921600">921600</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="resetMethod" class="form-label">Reset Method</label>
+                                <select id="resetMethod" class="form-select">
+                                    <option value="none">None (Power Cycle)</option>
+                                    <option selected value="normal">Normal (RTS/DTR)</option>
+                                    <option value="hardware">Hardware (RTS&DTR)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div id="chipInfo">
+                            <span class="status-indicator status-disconnected"></span> Disconnected
+                        </div>
+                        
+                        <div class="button-row mt-3">
+                            <button id="connectButton" class="btn btn-primary">
+                                <i class="bi bi-usb-symbol"></i> Connect
+                            </button>
+                            <button id="disconnectButton" class="btn btn-secondary" disabled>
+                                <i class="bi bi-x-circle"></i> Disconnect
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="navigation-buttons">
+                    <button id="backToStep1" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back
+                    </button>
+                    <button id="nextToStep3" class="btn btn-primary" disabled>
+                        <i class="bi bi-arrow-right"></i> Continue
+                    </button>
+                </div>
+            </div>
+
+            <div class="step-container" id="step3"> <!-- Step 3: Configure -->
+                <h2>Configure Flash Settings</h2>
+                <p>Upload firmware files and configure flash settings</p>
+                
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="binary-type-toggle">
+                                    <button class="btn active" data-binary="app">
+                                        <i class="bi bi-file-earmark-binary"></i> Application
+                                    </button>
+                                    <button class="btn" data-binary="bootloader">
+                                        <i class="bi bi-hdd-network"></i> Bootloader
+                                    </button>
+                                    <button class="btn" data-binary="partition">
+                                        <i class="bi bi-table"></i> Partition Table
+                                    </button>
+                                </div>
+                                
+                                <div id="appFirmware">
+                                    <div class="firmware-upload">
+                                        <div class="mb-3">
+                                            <label for="appAddress" class="form-label">App Address</label>
+                                            <input type="text" class="form-control" id="appAddress" value="0x10000">
+                                        </div>
+                                        <label for="appFile" class="custom-file-upload">
+                                            <span><i class="bi bi-upload"></i> Upload App Binary</span>
+                                        </label>
+                                        <input type="file" id="appFile" accept=".bin">
+                                        <p id="appFileInfo" class="file-info">No file selected</p>
+                                    </div>
+                                </div>
+                                
+                                <div id="bootloaderFirmware" class="d-none">
+                                    <div class="firmware-upload">
+                                        <div class="mb-3">
+                                            <label for="bootloaderAddress" class="form-label">Bootloader Address</label>
+                                            <input type="text" class="form-control" id="bootloaderAddress" value="0x1000">
+                                        </div>
+                                        <label for="bootloaderFile" class="custom-file-upload">
+                                            <span><i class="bi bi-upload"></i> Upload Bootloader Binary</span>
+                                        </label>
+                                        <input type="file" id="bootloaderFile" accept=".bin">
+                                        <p id="bootloaderFileInfo" class="file-info">No file selected</p>
+                                    </div>
+                                </div>
+                                
+                                <div id="partitionFirmware" class="d-none">
+                                    <div class="firmware-upload">
+                                        <div class="mb-3">
+                                            <label for="partitionAddress" class="form-label">Partition Address</label>
+                                            <input type="text" class="form-control" id="partitionAddress" value="0x8000">
+                                        </div>
+                                        <label for="partitionFile" class="custom-file-upload">
+                                            <span><i class="bi bi-upload"></i> Upload Partition Binary</span>
+                                        </label>
+                                        <input type="file" id="partitionFile" accept=".bin">
+                                        <p id="partitionFileInfo" class="file-info">No file selected</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card settings-card mt-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-0">
+                            <h5 class="card-title mb-0">Flash Options</h5>
+                            <button class="btn btn-sm btn-outline-secondary" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#flashOptionsCollapse" 
+                                    aria-expanded="false" aria-controls="flashOptionsCollapse">
+                                <i class="bi bi-gear"></i> Show Options
+                            </button>
+                        </div>
+                        
+                        <div class="collapse mt-3" id="flashOptionsCollapse">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="flashMode" class="form-label">Flash Mode</label>
+                                    <select id="flashMode" class="form-select">
+                                        <option value="qio">QIO</option>
+                                        <option selected value="dio">DIO</option>
+                                        <option value="dout">DOUT</option>
+                                        <option value="qout">QOUT</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="flashFreq" class="form-label">Flash Freq</label>
+                                    <select id="flashFreq" class="form-select">
+                                        <option value="20m">20 MHz</option>
+                                        <option selected value="40m">40 MHz</option>
+                                        <option value="80m">80 MHz</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="flashSize" class="form-label">Flash Size</label>
+                                    <select id="flashSize" class="form-select">
+                                        <option value="1MB">1 MB</option>
+                                        <option value="2MB">2 MB</option>
+                                        <option selected value="4MB">4 MB</option>
+                                        <option value="8MB">8 MB</option>
+                                        <option value="16MB">16 MB</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-check mt-3">
+                                <input class="form-check-input" type="checkbox" id="eraseAll" checked> 
+                                <label class="form-check-label" for="eraseAll">
+                                    Erase all flash before programming
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="navigation-buttons">
+                    <button id="backToStep2" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back
+                    </button>
+                    <button id="nextToStep4" class="btn btn-primary">
+                        <i class="bi bi-arrow-right"></i> Continue
+                    </button>
+                </div>
+            </div>
+
+            <div class="step-container" id="step4"> <!-- Step 4: Flash -->
+                <h2>Flash Your Device</h2>
+                <p>Ready to flash your device with the selected firmware</p>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Flash Summary</h5>
+                        <ul id="flashSummary">
+                            <!-- Flash summary will be populated by JS -->
+                        </ul>
+                        
+                        <div class="progress mb-3">
+                            <div id="flashProgress" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button id="flashButton" class="btn btn-primary">
+                                <i class="bi bi-lightning"></i> Flash Firmware
+                            </button>
+                            <button id="eraseButton" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Erase Flash
+                            </button>
+                            <button id="resetButton" class="btn btn-secondary">
+                                <i class="bi bi-arrow-repeat"></i> Reset Device
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="globalStatusIndicator" class="alert alert-warning d-none mt-3" role="alert"></div>
+
+                <div class="navigation-buttons">
+                    <button id="backToStep3" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back
+                    </button>
+                    <button id="startOver" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-repeat"></i> Start Over
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mt-4"> <!-- Terminal output -->
+                <button class="btn btn-outline-secondary w-100" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#terminal-container" 
+                        aria-expanded="false" aria-controls="terminal-container">
+                    <i class="bi bi-terminal"></i> Output Log <i class="bi bi-chevron-down ms-2"></i>
+                </button>
+                <div class="collapse" id="terminal-container">
+                    <div class="terminal-header">
+                        <h5><i class="bi bi-terminal"></i> Output Log</h5>
+                    </div>
+                    <pre id="terminal"></pre>
+                </div>
+            </div>
+        </main>
+
+        <footer class="py-3 text-center">
+            <p>
+                ESPressoFlash | <i class="bi bi-github"></i> <a href="https://github.com/jaylikesbunda/ESPressoFlash" target="_blank">GitHub</a>
+                <br> 
+                <span class="kofi-link">If you like using ESPresso, consider <a href="https://ko-fi.com/jaylikesbunda" target="_blank" rel="noopener noreferrer">buying me one! <i class="bi bi-cup-hot-fill"></i></a></span>
+            </p>
+        </footer>
+    </div>
+    <div id="loading-container"></div>
+ 
+    <script src="loading-animation.js"></script>
+    
+    <script type="module">
+        import * as esptoolJS from 'https://unpkg.com/esptool-js@latest/bundle.js';
+        window.esptoolJS = esptoolJS;
+    </script>
+    
+    <script src="flasher.js"></script>
+    
+    <script src="custom.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 
