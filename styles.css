@@ -175,17 +175,13 @@ h2 {
 }
 
 .card {
-    border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     margin-bottom: 1.5rem;
     overflow: hidden;
     transition: var(--transition);
-    background-color: var(--card-bg);
+    background-color: var(--bg-color);
 }
 
 .card:hover {
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
     background-color: var(--card-bg-hover);
 }
 
