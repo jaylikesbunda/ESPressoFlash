@@ -209,6 +209,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 bootloaderAddress: '0x0',
                 partitionAddress: '0x8000'
             },
+            'ESP32-C5': {
+                filters: [
+                    { usbVendorId: 0x303A, usbProductId: 0x1001 } // Guessing based on S3/C6
+                ],
+                defaultFlashMode: 'dio',
+                defaultFlashFreq: '80m', // Assuming similar to C6
+                defaultFlashSize: '4MB',
+                appAddress: '0x10000',
+                bootloaderAddress: '0x2000',   // Updated based on user info
+                partitionAddress: '0x8000'
+            },
+            'ESP32-H2': {
+                 filters: [
+                    { usbVendorId: 0x303A, usbProductId: 0x1001 } // Guessing based on S3/C6/C5
+                ],
+                defaultFlashMode: 'dio',  // Common default
+                defaultFlashFreq: '40m', // Common default
+                defaultFlashSize: '4MB', // Common default
+                appAddress: '0x10000',
+                bootloaderAddress: '0x0',    // User provided offset
+                partitionAddress: '0x8000'
+            },
             'ESP8266': {
                 filters: [
                     { usbVendorId: 0x10C4, usbProductId: 0xEA60 }, // CP210x
@@ -219,6 +241,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 defaultFlashSize: '4MB',
                 appAddress: '0x10000',
                 bootloaderAddress: '0x0',
+                partitionAddress: '0x8000'
+            },
+            'ESP32-C2': {
+                filters: [
+                     { usbVendorId: 0x303A, usbProductId: 0x0005 } // Guessing based on C3
+                ],
+                defaultFlashMode: 'dio',
+                defaultFlashFreq: '40m',
+                defaultFlashSize: '4MB',
+                appAddress: '0x10000',
+                bootloaderAddress: '0x0',   // Inferring 0x0 like other C-series
+                partitionAddress: '0x8000'
+            },
+            'ESP32-P4': {
+                 filters: [
+                    { usbVendorId: 0x303A, usbProductId: 0x1001 } // Placeholder/Guess
+                ],
+                defaultFlashMode: 'dio',
+                defaultFlashFreq: '80m', // High speed chip, assuming faster freq
+                defaultFlashSize: '4MB', // Default
+                appAddress: '0x10000',
+                bootloaderAddress: '0x2000', // User provided offset
                 partitionAddress: '0x8000'
             }
         };
