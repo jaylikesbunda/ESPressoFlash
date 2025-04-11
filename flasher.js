@@ -151,9 +151,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const deviceOptions = {
             'ESP32': {
                 filters: [
-                    { usbVendorId: 0x0403, usbProductId: 0x6010 }, // FTDI
+                    { usbVendorId: 0x0403, usbProductId: 0x6010 }, // FTDI (FT2232)
                     { usbVendorId: 0x10C4, usbProductId: 0xEA60 }, // CP210x
-                    { usbVendorId: 0x1A86, usbProductId: 0x7523 }, // CH340 - Added for your device
+                    { usbVendorId: 0x1A86, usbProductId: 0x7523 }, // CH340
+                    { usbVendorId: 0x0403, usbProductId: 0x6001 }, // FTDI (FT232R) - Added
+                    { usbVendorId: 0x303A, usbProductId: 0x1011 }  // CH9102 (Espressif VID) - Added
                 ],
                 defaultFlashMode: 'dio',
                 defaultFlashFreq: '40m',
@@ -166,6 +168,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 filters: [
                     { usbVendorId: 0x303A, usbProductId: 0x0002 }, // Built-in
                     { usbVendorId: 0x10C4, usbProductId: 0xEA60 }, // CP210x
+                    { usbVendorId: 0x0403, usbProductId: 0x6001 }, // FTDI (FT232R) - Added for boards with external UART
+                    { usbVendorId: 0x303A, usbProductId: 0x1011 }  // CH9102 (Espressif VID) - Added for boards with external UART
                 ],
                 defaultFlashMode: 'dio',
                 defaultFlashFreq: '80m',
@@ -178,6 +182,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 filters: [
                     { usbVendorId: 0x303A, usbProductId: 0x1001 }, // Built-in
                     { usbVendorId: 0x10C4, usbProductId: 0xEA60 }, // CP210x
+                    { usbVendorId: 0x0403, usbProductId: 0x6001 }, // FTDI (FT232R) - Added for boards with external UART
+                    { usbVendorId: 0x303A, usbProductId: 0x1011 }  // CH9102 (Espressif VID) - Added for boards with external UART
                 ],
                 defaultFlashMode: 'dio',
                 defaultFlashFreq: '80m',
@@ -190,6 +196,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 filters: [
                     { usbVendorId: 0x303A, usbProductId: 0x0005 }, // Built-in
                     { usbVendorId: 0x10C4, usbProductId: 0xEA60 }, // CP210x
+                    { usbVendorId: 0x0403, usbProductId: 0x6001 }, // FTDI (FT232R) - Added for boards with external UART
+                    { usbVendorId: 0x303A, usbProductId: 0x1011 }  // CH9102 (Espressif VID) - Added for boards with external UART
                 ],
                 defaultFlashMode: 'dio',
                 defaultFlashFreq: '40m',
@@ -202,6 +210,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 filters: [
                     { usbVendorId: 0x303A, usbProductId: 0x1001 }, // Similar to S3
                     { usbVendorId: 0x10C4, usbProductId: 0xEA60 }, // CP210x
+                    { usbVendorId: 0x0403, usbProductId: 0x6001 }, // FTDI (FT232R) - Added for boards with external UART
+                    { usbVendorId: 0x303A, usbProductId: 0x1011 }  // CH9102 (Espressif VID) - Added for boards with external UART
                 ],
                 defaultFlashMode: 'dio',
                 defaultFlashFreq: '80m',
@@ -212,7 +222,10 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             'ESP32-C5': {
                 filters: [
-                    { usbVendorId: 0x303A, usbProductId: 0x1001 } // Guessing based on S3/C6
+                    { usbVendorId: 0x303A, usbProductId: 0x1001 }, // Guessing based on S3/C6
+                    { usbVendorId: 0x10C4, usbProductId: 0xEA60 }, // CP210x
+                    { usbVendorId: 0x0403, usbProductId: 0x6001 }, // FTDI (FT232R) - Added
+                    { usbVendorId: 0x303A, usbProductId: 0x1011 }  // CH9102 (Espressif VID) - Added
                 ],
                 defaultFlashMode: 'dio',
                 defaultFlashFreq: '80m', // Assuming similar to C6
@@ -223,7 +236,10 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             'ESP32-H2': {
                  filters: [
-                    { usbVendorId: 0x303A, usbProductId: 0x1001 } // Guessing based on S3/C6/C5
+                    { usbVendorId: 0x303A, usbProductId: 0x1001 }, // Guessing based on S3/C6/C5
+                    { usbVendorId: 0x10C4, usbProductId: 0xEA60 }, // CP210x
+                    { usbVendorId: 0x0403, usbProductId: 0x6001 }, // FTDI (FT232R) - Added
+                    { usbVendorId: 0x303A, usbProductId: 0x1011 }  // CH9102 (Espressif VID) - Added
                 ],
                 defaultFlashMode: 'dio',  // Common default
                 defaultFlashFreq: '40m', // Common default
@@ -236,6 +252,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 filters: [
                     { usbVendorId: 0x10C4, usbProductId: 0xEA60 }, // CP210x
                     { usbVendorId: 0x1A86, usbProductId: 0x7523 }, // CH340
+                    { usbVendorId: 0x0403, usbProductId: 0x6001 }, // FTDI (FT232R) - Added
+                    { usbVendorId: 0x303A, usbProductId: 0x1011 }  // CH9102 (Espressif VID) - Added
                 ],
                 defaultFlashMode: 'dio',
                 defaultFlashFreq: '40m',
@@ -246,7 +264,10 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             'ESP32-C2': {
                 filters: [
-                     { usbVendorId: 0x303A, usbProductId: 0x0005 } // Guessing based on C3
+                     { usbVendorId: 0x303A, usbProductId: 0x0005 }, // Guessing based on C3
+                     { usbVendorId: 0x10C4, usbProductId: 0xEA60 }, // CP210x
+                     { usbVendorId: 0x0403, usbProductId: 0x6001 }, // FTDI (FT232R) - Added
+                     { usbVendorId: 0x303A, usbProductId: 0x1011 }  // CH9102 (Espressif VID) - Added
                 ],
                 defaultFlashMode: 'dio',
                 defaultFlashFreq: '40m',
@@ -257,7 +278,10 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             'ESP32-P4': {
                  filters: [
-                    { usbVendorId: 0x303A, usbProductId: 0x1001 } // Placeholder/Guess
+                    { usbVendorId: 0x303A, usbProductId: 0x1001 }, // Placeholder/Guess (Likely built-in)
+                    { usbVendorId: 0x10C4, usbProductId: 0xEA60 }, // CP210x
+                    { usbVendorId: 0x0403, usbProductId: 0x6001 }, // FTDI (FT232R) - Added
+                    { usbVendorId: 0x303A, usbProductId: 0x1011 }  // CH9102 (Espressif VID) - Added
                 ],
                 defaultFlashMode: 'dio',
                 defaultFlashFreq: '80m', // High speed chip, assuming faster freq
