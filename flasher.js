@@ -342,6 +342,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectedSide = card.querySelector('.device-name').textContent;
                 espLoaderTerminal.writeLine(`Selected: ${selectedSide} (${selectedDevice})`);
                 updateDefaultAddresses();
+                // Enable Step 1 next button
+                if (nextToStep2Button) nextToStep2Button.disabled = false;
             });
         });
         
@@ -456,6 +458,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             currentStep = step;
+            // Re-evaluate button states when changing steps
+            updateButtonStates();
         }
         
         // Update default addresses based on selected device
@@ -662,6 +666,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     return false;
                 }
             }
+            // If already disconnected, ensure state is correct
+            connected = false;
+            updateButtonStates();
+            chipInfoElem.innerHTML = `<span class="status-indicator status-disconnected"></span> Disconnected`;
+            if (nextToStep3Button) nextToStep3Button.disabled = true;
             return true;
         }
         
@@ -692,6 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
             flashButton.disabled = true;
             eraseButton.disabled = true;
             disconnectButton.disabled = true;
+            if (resetButton) resetButton.disabled = true; // Disable reset during flash too
 
             let flashStartTime = null; // Variable to store flash start time
 
@@ -834,7 +844,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 let flashSuccess = false;
                 let retryCount = 0;
                 const maxRetries = 2;
-
                 flashStartTime = Date.now(); // Record start time just before flashing begins
 
                 while (!flashSuccess && retryCount <= maxRetries) {
@@ -916,7 +925,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error("Error during flash process:", error);
                 espLoaderTerminal.writeLine(`\nError flashing: ${error.message}`);
-                if (flashETAElem) flashETAElem.textContent = ''; // Clear ETA on error
+                if (flashETAElem) flashETAElem.textContent = '';
                 chipInfoElem.innerHTML = `<span class="status-indicator status-error"></span> Flash failed`;
                 flashProgressElem.style.width = '0%';
                 updateStatusIndicator('error', 'Flash failed', error.message);
@@ -998,6 +1007,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Disable buttons during erase
             eraseButton.disabled = true;
             flashButton.disabled = true;
+            if (resetButton) resetButton.disabled = true; // Disable reset during erase
 
             try {
                 // The indicator is now managed within eraseFlashInternal
@@ -1113,11 +1123,49 @@ document.addEventListener('DOMContentLoaded', () => {
             const webSerialModal = new bootstrap.Modal(getElementById('webSerialModal'));
             webSerialModal.show();
         } else {
-            espLoaderTerminal.writeLine("Hackers Nightlight Flasher ready. Please select which side you want to flash.");
+            espLoaderTerminal.writeLine("ESPressoFlasher ready. Please select your device type.");
         }
         
         // Initialize the UI
         goToStep(1);
+
+        // Add event listeners for "I'm Stuck" buttons
+        const stuckButtons = document.querySelectorAll('.stuck-button');
+        console.log('[Debug] Found stuck buttons:', stuckButtons.length); // Log: Check if buttons are found
+        console.log('[Debug] Bootstrap object available?', typeof bootstrap !== 'undefined', window.bootstrap); // Log: Check Bootstrap object
+
+        stuckButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                const step = button.dataset.step;
+                console.log(`[Debug] Stuck button clicked for step: ${step}`); // Log: Button click
+
+                const modalId = `stuckModalStep${step}`;
+                const modalElement = document.getElementById(modalId);
+                console.log(`[Debug] Attempting to find modal element with ID: ${modalId}`, modalElement); // Log: Modal element search
+
+                if (modalElement) {
+                    console.log('[Debug] Modal element found.');
+                    if (bootstrap && bootstrap.Modal) {
+                        try {
+                            console.log('[Debug] Bootstrap and bootstrap.Modal found. Creating and showing modal...'); // Log: Attempting to show
+                            const modalInstance = new bootstrap.Modal(modalElement);
+                            modalInstance.show();
+                            console.log('[Debug] modalInstance.show() called.'); // Log: Show called
+                        } catch (e) {
+                            console.error('[Debug] Error creating or showing Bootstrap modal:', e); // Log: Error during modal show
+                            espLoaderTerminal.writeLine(`Error showing help: ${e.message}`);
+                        }
+                    } else {
+                        console.error('[Debug] Bootstrap Modal object not found!'); // Log: Bootstrap missing
+                        espLoaderTerminal.writeLine('Error: Could not show help (Bootstrap Modal not loaded).');
+                    }
+                } else {
+                    console.error(`[Debug] Could not find modal element #${modalId}`); // Log: Modal element missing
+                    espLoaderTerminal.writeLine(`Error: Could not open help for step ${step} (modal element missing).`);
+                }
+            });
+        });
     }
 
     // Add this function to update the modern status indicator
@@ -1188,11 +1236,24 @@ document.addEventListener('DOMContentLoaded', () => {
     style.textContent = `
     .file-uploaded {
         border: 2px solid #5bf13d !important;
+        background-color: rgba(91, 241, 61, 0.1) !important;
         transition: all 0.3s ease !important;
     }
     .file-uploaded span {
         color: #5bf13d !important;
         font-weight: 500 !important;
+    }
+    @keyframes pulse-flashing { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    .status-flashing-anim { animation: pulse-flashing 1.5s infinite; }
+    .file-badge {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: var(--success-color, #2ecc71);
+        margin-left: 8px;
+        vertical-align: middle;
+        box-shadow: 0 0 5px var(--success-color, #2ecc71);
     }
     `;
     document.head.appendChild(style);
@@ -1203,15 +1264,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const input = document.getElementById(id);
             const label = document.querySelector(`label[for="${id}"] span`);
             const info = document.getElementById(id + 'Info');
+            const dropZone = document.querySelector(`label[for="${id}"]`);
             
             console.log(`${id}:`, {
                 hasFiles: input?.files?.length > 0,
                 fileName: input?.files?.[0]?.name,
                 labelText: label?.innerHTML,
                 infoText: info?.textContent,
-                labelHasClass: document.querySelector(`label[for="${id}"]`)?.classList.contains('file-uploaded')
+                dropZoneHasClass: dropZone?.classList.contains('file-uploaded')
             });
         });
+        console.log("Has Firmware Selected:", hasFirmwareFilesSelected());
+        console.log("Connected:", connected);
     };
 
     // Also add this global debug function
