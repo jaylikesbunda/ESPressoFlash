@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const chipInfoElem = getElementById('chipInfo');
         const flashProgressElem = getElementById('flashProgress');
         const flashSummaryElem = getElementById('flashSummary');
+        const flashETAElem = getElementById('flashETA'); // Get the ETA element
         const selectedDeviceConnectElem = getElementById('selectedDeviceConnect');
         const globalStatusIndicator = getElementById('globalStatusIndicator');
         
@@ -675,6 +676,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Clear ETA at the start
+            if (flashETAElem) flashETAElem.textContent = '';
+
             // Save device information for reconnection
             const savedDevice = selectedDevice;
             const savedSide = selectedSide;
@@ -689,6 +693,8 @@ document.addEventListener('DOMContentLoaded', () => {
             eraseButton.disabled = true;
             disconnectButton.disabled = true;
 
+            let flashStartTime = null; // Variable to store flash start time
+
             try {
                 espLoaderTerminal.writeLine("Preparing to flash...");
                 chipInfoElem.innerHTML = `<span class="status-indicator status-flashing"></span> Preparing Flash...`;
@@ -697,28 +703,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 // --- Start: Erase Logic Update ---
                 let eraseSuccessful = true; // Assume success if not erasing
                 if (eraseAllCheckbox.checked) {
-                    // --- CHANGE: Improve Erase Feedback (Before Erase) ---
                     espLoaderTerminal.writeLine("Erase requested before flashing. This may take a moment...");
                     updateStatusIndicator('flashing', 'Erasing flash...', 'This may take a moment...');
-                    // --- End Change ---
                     try {
                         await eraseFlashInternal(); // Await the erase operation
-                        // Erase successful, continue to flashing
                     } catch (eraseError) {
-                        // --- CHANGE: Improve Error Feedback ---
                         espLoaderTerminal.writeLine(`❌ Erase failed: ${eraseError.message}. Aborting flash operation.`);
                         chipInfoElem.innerHTML = `<span class="status-indicator status-error"></span> Erase Failed`;
                         updateStatusIndicator('error', 'Erase Failed', eraseError.message);
                         eraseSuccessful = false; // Mark erase as failed
-                        // --- End Change ---
                     }
                 } else {
                     espLoaderTerminal.writeLine("Skipping erase step as checkbox is not checked.");
                 }
 
-                // Only proceed if erase was successful (or not requested)
                 if (!eraseSuccessful) {
-                    // Re-enable buttons after failed erase attempt
                     updateButtonStates();
                     return; // Stop the flash process
                 }
@@ -775,7 +774,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     espLoaderTerminal.writeLine(`Adjusted bootloader offset to 0x0 for ${chipType}`);
                 }
 
-                // Then check your bootloader file address
                 for (let i = 0; i < fileArray.length; i++) {
                     if (fileArray[i].type === 'Bootloader' &&
                         fileArray[i].address !== correctBootloaderOffset) {
@@ -787,23 +785,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 chipInfoElem.innerHTML = `<span class="status-indicator status-flashing"></span> Flashing...`;
                 updateStatusIndicator('flashing', 'Flashing firmware...', 'Do not disconnect');
 
+                // Helper function to format seconds into MM:SS
+                const formatTime = (seconds) => {
+                    const mins = Math.floor(seconds / 60);
+                    const secs = Math.floor(seconds % 60);
+                    return `${mins}m ${secs}s`;
+                };
 
                 const flashOptions = {
                     fileArray: fileArray.map(item => ({ data: item.data, address: item.address })),
                     flashSize: "keep",
                     flashMode: flashModeSelect.value,
                     flashFreq: flashFreqSelect.value,
-                    // --- Erase Logic Update: Always set eraseAll to false ---
-                    // The erase step is now handled manually above if checked
-                    eraseAll: false,
-                    // --- End Erase Logic Update ---
+                    eraseAll: false, // Erase handled above
                     compress: true,
                     reportProgress: (fileIndex, written, total) => {
                         const percentage = Math.floor((written / total) * 100);
                         flashProgressElem.style.width = `${percentage}%`;
                         const fileName = fileArray[fileIndex] ? fileArray[fileIndex].name : 'unknown';
-                        // Use writeLine for progress to ensure each update is on a new line in terminal
                         espLoaderTerminal.writeLine(`Flashing ${fileName}: ${percentage}% (${written}/${total} bytes)`);
+
+                        // Calculate and display ETA
+                        if (flashStartTime && written > 0 && flashETAElem) {
+                            const currentTime = Date.now();
+                            const elapsedTimeSeconds = (currentTime - flashStartTime) / 1000;
+
+                            // Don't show ETA immediately or if speed is zero
+                            if (elapsedTimeSeconds > 1) {
+                                const bytesPerSecond = written / elapsedTimeSeconds;
+                                if (bytesPerSecond > 0) {
+                                    const remainingBytes = total - written;
+                                    const remainingSeconds = remainingBytes / bytesPerSecond;
+                                    flashETAElem.textContent = `ETA: ${formatTime(remainingSeconds)}`;
+                                } else {
+                                    flashETAElem.textContent = 'ETA: Calculating...';
+                                }
+                            } else {
+                                flashETAElem.textContent = 'ETA: Calculating...';
+                            }
+                        } else if (flashETAElem) {
+                            flashETAElem.textContent = ''; // Clear if no start time or not started
+                        }
                     },
                     calculateMD5Hash: calculateMd5Hash
                 };
@@ -811,12 +833,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Add retry logic for the actual flashing
                 let flashSuccess = false;
                 let retryCount = 0;
-                const maxRetries = 2; // Keep retry logic
+                const maxRetries = 2;
+
+                flashStartTime = Date.now(); // Record start time just before flashing begins
 
                 while (!flashSuccess && retryCount <= maxRetries) {
                     try {
                         espLoaderTerminal.writeLine(`Starting flash write operation${retryCount > 0 ? ` (attempt ${retryCount + 1})` : ''}...`);
-                        await espLoader.writeFlash(flashOptions); // This only writes now
+                        await espLoader.writeFlash(flashOptions);
                         flashSuccess = true;
                         espLoaderTerminal.writeLine("\nFlash write complete!");
                     } catch (flashError) {
@@ -826,7 +850,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             try {
                                 await espLoader.sync();
                             } catch (e) {
-                                // Ignore sync errors, will try anyway
+                                // Ignore sync errors
                             }
                         } else {
                             throw flashError; // No more retries
@@ -836,70 +860,69 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // --- Post-Flash Actions ---
                 flashProgressElem.style.width = '100%';
+                if (flashETAElem) flashETAElem.textContent = ''; // Clear ETA on completion
                 chipInfoElem.innerHTML = `<span class="status-indicator status-success"></span> Flash Complete`;
                 updateStatusIndicator('success', 'Flash complete!', 'Attempting device reset...');
 
-                // --- CHANGE: Attempt soft reset (into running app) ---
                 try {
                     espLoaderTerminal.writeLine("Attempting soft reset (into app)...");
-                    // Use softReset(true) to try and run the app
                     await espLoader.softReset(true);
                     espLoaderTerminal.writeLine("Soft reset command sent.");
-                    // Add a small delay after reset command
                     await new Promise(resolve => setTimeout(resolve, 500));
                 } catch (resetError) {
                     console.error("Soft reset failed:", resetError);
                     espLoaderTerminal.writeLine(`Note: Soft reset command failed: ${resetError.message}. Manual reset may be required.`);
-                    // Continue disconnecting even if reset fails
                 }
-                // --- End Change ---
 
-                // Try to disconnect cleanly
                 try {
                     await disconnect();
                 } catch (err) {
                      espLoaderTerminal.writeLine(`Note: Disconnect error after reset: ${err.message}`);
-                    // Ignore disconnect errors, update UI anyway
                 } finally {
-                    // --- CHANGE: Remove reconnect button logic, restore original buttons ---
                     const actionButtons = document.querySelector('.action-buttons');
                     if (actionButtons) {
                          actionButtons.innerHTML = `
-                             <button id="flashButton" class="btn btn-success">
+                             <button id="flashButton" class="btn btn-primary">
                                  <i class="bi bi-lightning"></i> Flash Firmware
                              </button>
-                             <button id="eraseButton" class="btn btn-secondary me-2">
-                                 <i class="bi bi-eraser"></i> Erase Flash
+                             <button id="eraseButton" class="btn btn-danger">
+                                 <i class="bi bi-trash"></i> Erase Flash
                              </button>
-                             <button id="resetButton" class="btn btn-secondary me-2">
-                                 <i class="bi bi-arrow-counterclockwise"></i> Reset Device
-                             </button>
-                             <button id="disconnectButton" class="btn btn-secondary">
-                                 <i class="bi bi-x-circle"></i> Disconnect
+                             <button id="resetButton" class="btn btn-secondary">
+                                 <i class="bi bi-arrow-repeat"></i> Reset Device
                              </button>
                          `;
-                        // Reattach event listeners
+                         // Reattach event listeners
                         document.getElementById('flashButton').addEventListener('click', flash);
                         document.getElementById('eraseButton').addEventListener('click', eraseFlash);
                         document.getElementById('resetButton').addEventListener('click', resetDevice);
-                        document.getElementById('disconnectButton').addEventListener('click', disconnect);
+                        // Add back the disconnect button which is missing now
+                        // Need to decide if disconnect should be present after flashing+reset attempt
+                        // Let's assume yes, but it might not work if the device truly reset
+                        actionButtons.insertAdjacentHTML('beforeend', `
+                             <button id="disconnectButton" class="btn btn-secondary ms-2">
+                                 <i class="bi bi-x-circle"></i> Disconnect
+                             </button>
+                         `);
+                        const disconnectBtn = document.getElementById('disconnectButton');
+                        if (disconnectBtn) disconnectBtn.addEventListener('click', disconnect);
                     }
-                    // Ensure UI reflects potentially disconnected state
-                    connected = false; // Assume disconnect happened or failed reset lost connection
+                    connected = false; // Assume disconnect happened or reset lost connection
                     updateButtonStates();
                     espLoaderTerminal.writeLine("Flash process complete. Device may have reset.");
                     updateStatusIndicator('success', 'Flash Complete', 'Device may have reset. Disconnected.');
-                    // --- End Change ---
                 }
 
             } catch (error) {
                 console.error("Error during flash process:", error);
                 espLoaderTerminal.writeLine(`\nError flashing: ${error.message}`);
-                chipInfoElem.innerHTML = `<span class="status-indicator status-disconnected"></span> Flash failed`;
+                if (flashETAElem) flashETAElem.textContent = ''; // Clear ETA on error
+                chipInfoElem.innerHTML = `<span class="status-indicator status-error"></span> Flash failed`;
                 flashProgressElem.style.width = '0%';
                 updateStatusIndicator('error', 'Flash failed', error.message);
-                // Ensure buttons are re-enabled on failure
-                updateButtonStates();
+            } finally {
+                 // Ensure buttons are re-enabled based on the final state (connected or not)
+                 updateButtonStates();
             }
         }
         
