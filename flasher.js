@@ -664,13 +664,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
             } catch (error) {
                 console.error("Error during connection with main():", error);
-                espLoaderTerminal.writeLine(`Error: ${error.message}`);
-                chipInfoElem.innerHTML = `<span class="status-indicator status-disconnected"></span> Connection failed`;
+                let userMessage = `Error: ${error.message}`; // Default message for terminal
+                let chipInfoMessage = `<span class="status-indicator status-disconnected"></span> Connection failed`; // Default for chipInfoElem
+                let statusIndicatorDetails = `Error: ${error.message}`; // Default for status indicator details
+                let statusIndicatorTitle = 'Connection Failed'; // Default title
+
+                // Check for specific error types
+                const errorStr = error.message.toLowerCase();
+
+                if (errorStr.includes("failed to connect") ||
+                    errorStr.includes("timed out waiting for packet") ||
+                    errorStr.includes("invalid head of packet") ||
+                    errorStr.includes("no serial data received")) {
+                    // Bootloader/Sync specific errors
+                    userMessage = `Connection failed. Ensure the device is in bootloader mode (hold BOOT, press RESET) and try again. (Error: ${error.message})`;
+                    chipInfoMessage = `<span class="status-indicator status-disconnected"></span> Failed: Check Bootloader Mode`;
+                    statusIndicatorTitle = 'Check Bootloader Mode';
+                    statusIndicatorDetails = 'Hold BOOT/FLASH, press RESET, then try connecting.';
+                } else if (errorStr.includes("access denied") || 
+                           errorStr.includes("port is already open") ||
+                           errorStr.includes("failed to open serial port")) {
+                    // Port access errors
+                    userMessage = `Error: Could not open serial port. Is it already open in another program (like Arduino IDE, PlatformIO Monitor)? Close other connections and try again. (Error: ${error.message})`;
+                    chipInfoMessage = `<span class="status-indicator status-disconnected"></span> Failed: Port In Use?`;
+                    statusIndicatorTitle = 'Port Access Error';
+                    statusIndicatorDetails = 'Close other serial programs (IDE, Monitor) and retry.';
+                } else if (errorStr.includes("the device has been lost")) {
+                    // Device disconnected errors
+                    userMessage = `Error: Device disconnected during connection attempt. Check cable and connection. (Error: ${error.message})`;
+                    chipInfoMessage = `<span class="status-indicator status-disconnected"></span> Failed: Device Lost`;
+                    statusIndicatorTitle = 'Device Disconnected';
+                    statusIndicatorDetails = 'Check USB cable and connection.';
+                } else {
+                    // Generic fallback for other errors
+                    userMessage = `Connection Error: ${error.message}`;
+                     chipInfoMessage = `<span class="status-indicator status-disconnected"></span> Connection Failed`;
+                     statusIndicatorTitle = 'Connection Failed';
+                     statusIndicatorDetails = `Error: ${error.message}`; // Show the actual error here
+                }
+
+
+                espLoaderTerminal.writeLine(userMessage); // Display detailed message in terminal
+                chipInfoElem.innerHTML = chipInfoMessage; // Update chip info display
                 // Ensure connect button is re-enabled on failure
                 if (connectButton) connectButton.disabled = false;
                 connected = false; // Ensure state is consistent
                 updateButtonStates(); // Update UI based on failed state
-
+                updateStatusIndicator('error', statusIndicatorTitle, statusIndicatorDetails); // Update status indicator with appropriate details
             }
         }
         
