@@ -540,4 +540,72 @@ footer a:hover {
 .modal-footer .btn-secondary:hover {
     background-color: #7a7d80; /* Slightly darker secondary */
     border-color: #7a7d80;
+}
+
+/* Help Diagram Styles */
+.help-diagram {
+    display: flex;
+    justify-content: space-around; /* Distribute space */
+    align-items: center;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    gap: 1rem; /* Space between items */
+    padding: 1.5rem;
+    background-color: var(--darker-color); /* Slightly darker background */
+    border-radius: var(--border-radius);
+    margin-top: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.help-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-width: 80px; /* Ensure minimum width for steps */
+}
+
+.help-step i {
+    font-size: 2.5rem; /* Larger icons */
+    color: var(--info-color); /* Consistent info color */
+    margin-bottom: 0.5rem;
+}
+
+.help-step p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0;
+    line-height: 1.2;
+}
+
+.help-arrow {
+    font-size: 1.5rem;
+    color: var(--info-color); /* Consistent info color */
+    flex-shrink: 0; /* Prevent arrows from shrinking */
+}
+
+/* Responsive adjustments for diagrams */
+@media (max-width: 768px) {
+    .help-diagram {
+        justify-content: center; /* Center items when wrapped */
+        gap: 0.5rem 1.5rem; /* Adjust gap for wrapped layout */
+    }
+    .help-arrow {
+         /* Hide arrows on small screens or rotate them if preferred */
+         /* display: none; */ 
+         transform: rotate(90deg); /* Example: Rotate arrows down */
+         margin: 0.5rem 0;
+    }
+    .help-step {
+        min-width: 60px; /* Adjust width for smaller screens */
+    }
+     .help-step i {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .help-diagram {
+         padding: 1rem;
+         gap: 0.5rem 1rem;
+    }
 } 

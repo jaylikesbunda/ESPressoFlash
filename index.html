@@ -573,26 +573,24 @@
                         <li>Click the matching card below.</li>
                         <li>The "Continue" button will activate.</li>
                     </ul>
-                    <div class="text-center my-3 p-3 border rounded bg-dark">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="text-center">
-                                <i class="bi bi-cpu fs-1 text-info"></i>
-                                <p class="mb-0 small">Identify Chip</p>
-                            </div>
-                            <i class="bi bi-arrow-right fs-3 text-muted mx-3"></i>
-                            <div class="text-center">
-                                <i class="bi bi-card-heading fs-1 text-primary position-relative">
-                                    <i class="bi bi-mouse-pointer-fill fs-6 position-absolute bottom-0 end-0 text-light"></i>
-                                </i>
-                                <p class="mb-0 small">Click Card</p>
-                            </div>
-                             <i class="bi bi-arrow-right fs-3 text-muted mx-3"></i>
-                             <div class="text-center">
-                                <i class="bi bi-check-circle-fill fs-1 text-success"></i>
-                                <p class="mb-0 small">Continue</p>
-                            </div>
+                    <!-- Updated Diagram -->
+                    <div class="help-diagram">
+                        <div class="help-step">
+                            <i class="bi bi-cpu"></i>
+                            <p>Identify Chip</p>
+                        </div>
+                        <i class="bi bi-arrow-right help-arrow"></i>
+                        <div class="help-step">
+                            <i class="bi bi-card-heading"></i>
+                            <p>Click Card</p>
+                        </div>
+                        <i class="bi bi-arrow-right help-arrow"></i>
+                        <div class="help-step">
+                            <i class="bi bi-check-circle"></i>
+                            <p>Continue</p>
                         </div>
                     </div>
+                    <!-- End Updated Diagram -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -611,7 +609,7 @@
                 </div>
                 <div class="modal-body">
                     <p>Establish communication between the browser and your ESP board.</p>
-                    <ul>
+                     <ul>
                         <li>Connect board via <strong>USB data cable</strong>.</li>
                         <li>Put board into <strong>bootloader/download mode</strong> (Hold BOOT, press RESET, then release BOOT).</li>
                         <li>Alternatively, some boards enter bootloader by just holding BOOT while plugging in.</li>
@@ -620,34 +618,34 @@
                         <li><strong>Troubleshooting:</strong> Try a different USB cable/port, install drivers for your USB-to-serial chip (CP210x/CH340). Verify you're in bootloader mode and try a lower baud rate.</li>
                         <li>If you're still having trouble, try a different browser.</li>
                     </ul>
-                     <div class="text-center my-3 p-3 border rounded bg-dark">
-                         <div class="d-flex justify-content-center align-items-center flex-wrap gap-3">
-                            <div class="text-center">
-                                <i class="bi bi-usb-plug-fill fs-1 text-info"></i>
-                                <p class="mb-0 small">1. Connect USB</p>
-                            </div>
-                             <div class="text-center">
-                                <i class="bi bi-download fs-1 text-warning"></i>
-                                <p class="mb-0 small">2. Enter Boot Mode<br>(Hold BOOT, press RESET)</p>
-                            </div>
-                             <div class="text-center">
-                                <i class="bi bi-speedometer2 fs-1 text-secondary"></i>
-                                <p class="mb-0 small">3. Set Baud Rate</p>
-                             </div>
-                            <div class="text-center">
-                                <button class="btn btn-primary btn-sm"><i class="bi bi-usb-symbol"></i> Connect</button>
-                                <p class="mb-0 small mt-1">4. Click Connect</p>
-                            </div>
-                            <div class="text-center">
-                                <i class="bi bi-list-ul fs-1 text-info"></i>
-                                <p class="mb-0 small">5. Select Port<br>(in browser popup)</p>
-                            </div>
-                            <div class="text-center">
-                                <i class="bi bi-check-circle-fill fs-1 text-success"></i>
-                                <p class="mb-0 small">6. Connected!</p>
-                            </div>
+                    <!-- Updated Diagram -->
+                    <div class="help-diagram">
+                         <div class="help-step">
+                            <i class="bi bi-usb-plug"></i>
+                            <p>Connect USB</p>
+                        </div>
+                        <i class="bi bi-arrow-right help-arrow"></i>
+                        <div class="help-step">
+                            <i class="bi bi-download"></i>
+                            <p>Enter Boot Mode</p>
+                        </div>
+                        <i class="bi bi-arrow-right help-arrow"></i>
+                        <div class="help-step">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                            <p>Click Connect</p>
+                        </div>
+                         <i class="bi bi-arrow-right help-arrow"></i>
+                        <div class="help-step">
+                            <i class="bi bi-list-ul"></i>
+                            <p>Select Port</p>
+                        </div>
+                        <i class="bi bi-arrow-right help-arrow"></i>
+                        <div class="help-step">
+                            <i class="bi bi-check-circle"></i>
+                            <p>Connected!</p>
                         </div>
                     </div>
+                     <!-- End Updated Diagram -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -666,7 +664,7 @@
                 </div>
                 <div class="modal-body">
                     <p>Select the firmware file(s) to flash.</p>
-                    <ul>
+                     <ul>
                         <li>Usually, only the <strong>Application</strong> (`.bin`) file is needed.</li>
                         <li>Select the "Application" toggle.</li>
                         <li>Click and upload your `.bin` file to the upload area.</li>
@@ -674,34 +672,39 @@
                         <li>Only add Bootloader/Partition files if specifically required.</li>
                         <li>"Erase all flash" is recommended for clean flashing and automatically enabled.</li>
                     </ul>
-                     <div class="text-center my-3 p-3 border rounded bg-dark">
-                         <div class="d-flex justify-content-center align-items-center flex-wrap gap-3">
-                             <div class="text-center">
-                                <div class="btn-group btn-group-sm mb-1">
-                                     <button class="btn btn-secondary active"><i class="bi bi-file-earmark-binary"></i> App</button>
-                                     <button class="btn btn-secondary"><i class="bi bi-hdd-network"></i> Boot</button>
-                                     <button class="btn btn-secondary"><i class="bi bi-table"></i> Part</button>
-                                 </div>
-                                 <p class="mb-0 small">1. Select Type</p>
-                             </div>
-                             <div class="text-center">
-                                 <i class="bi bi-upload fs-1 text-info"></i>
-                                 <p class="mb-0 small">2. Upload File (.bin)</p>
-                             </div>
-                             <div class="text-center">
-                                 <span class="badge bg-secondary mb-1">0x10000</span>
-                                 <p class="mb-0 small">3. Check Address</p>
-                             </div>
-                             <div class="text-center">
-                                 <i class="bi bi-gear fs-1 text-secondary"></i>
-                                 <p class="mb-0 small">4. (Optional) Options</p>
-                             </div>
-                              <div class="text-center">
-                                 <i class="bi bi-check-square-fill fs-1 text-warning"></i>
-                                 <p class="mb-0 small">5. Check Erase</p>
-                             </div>
+                     <!-- Updated Diagram -->
+                    <div class="help-diagram">
+                        <div class="help-step">
+                            <i class="bi bi-toggles"></i>
+                            <p>Select Type</p>
+                        </div>
+                         <i class="bi bi-arrow-right help-arrow"></i>
+                        <div class="help-step">
+                            <i class="bi bi-upload"></i>
+                            <p>Upload File</p>
+                        </div>
+                        <i class="bi bi-arrow-right help-arrow"></i>
+                        <div class="help-step">
+                            <i class="bi bi-geo-alt"></i>
+                            <p>Check Address</p>
+                        </div>
+                         <i class="bi bi-arrow-right help-arrow"></i>
+                         <div class="help-step">
+                             <i class="bi bi-gear"></i>
+                             <p>(Opt.) Options</p>
+                         </div>
+                        <i class="bi bi-arrow-right help-arrow"></i>
+                        <div class="help-step">
+                            <i class="bi bi-check-square"></i>
+                            <p>Check Erase</p>
+                        </div>
+                        <i class="bi bi-arrow-right help-arrow"></i>
+                        <div class="help-step">
+                             <i class="bi bi-arrow-right-circle"></i>
+                             <p>Continue</p>
                          </div>
                     </div>
+                    <!-- End Updated Diagram -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -727,33 +730,34 @@
                         <li>Tool will attempt to reset the device when finished.</li>
                         <li><strong>Troubleshooting:</strong> Check Output Log for errors. Try again, maybe using "Erase Flash" first. Check USB connection, power, addresses.</li>
                     </ul>
-                    <div class="text-center my-3 p-3 border rounded bg-dark">
-                        <div class="d-flex justify-content-center align-items-center flex-wrap gap-3">
-                             <div class="text-center">
-                                <i class="bi bi-card-checklist fs-1 text-info"></i>
-                                <p class="mb-0 small">1. Review Summary</p>
-                            </div>
-                             <div class="text-center">
-                                 <button class="btn btn-primary btn-sm"><i class="bi bi-lightning-fill"></i> Flash</button>
-                                 <p class="mb-0 small mt-1">2. Click Flash</p>
-                             </div>
-                              <div class="text-center">
-                                <div class="progress w-100 mb-1" style="height: 5px;">
-                                     <div class="progress-bar bg-success" style="width: 60%"></div>
-                                </div>
-                                <i class="bi bi-clock-history text-success"></i> <span class="small">ETA: 0m 30s</span>
-                                <p class="mb-0 small">3. Wait...</p>
-                             </div>
-                              <div class="text-center">
-                                <i class="bi bi-terminal fs-1 text-secondary"></i>
-                                <p class="mb-0 small">4. Check Log (if needed)</p>
-                            </div>
-                             <div class="text-center">
-                                <i class="bi bi-check-circle-fill fs-1 text-success"></i>
-                                <p class="mb-0 small">5. Complete!</p>
-                            </div>
+                    <!-- Updated Diagram -->
+                    <div class="help-diagram">
+                        <div class="help-step">
+                            <i class="bi bi-card-checklist"></i>
+                            <p>Review</p>
+                        </div>
+                        <i class="bi bi-arrow-right help-arrow"></i>
+                        <div class="help-step">
+                            <i class="bi bi-lightning-charge"></i>
+                            <p>Click Flash</p>
+                        </div>
+                         <i class="bi bi-arrow-right help-arrow"></i>
+                        <div class="help-step">
+                            <i class="bi bi-hourglass-split"></i>
+                            <p>Wait</p>
+                        </div>
+                        <i class="bi bi-arrow-right help-arrow"></i>
+                         <div class="help-step">
+                            <i class="bi bi-terminal"></i>
+                            <p>(Opt.) Check Log</p>
+                        </div>
+                        <i class="bi bi-arrow-right help-arrow"></i>
+                         <div class="help-step">
+                            <i class="bi bi-check-circle"></i>
+                            <p>Complete!</p>
                         </div>
                     </div>
+                     <!-- End Updated Diagram -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
