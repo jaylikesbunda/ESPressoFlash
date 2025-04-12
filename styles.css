@@ -452,6 +452,19 @@ footer a:hover {
     color: var(--text-color);
 }
 
+/* Style for the Show More/Less button */
+.btn-outline-espresso {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    background-color: transparent;
+}
+
+.btn-outline-espresso:hover {
+    color: var(--bg-color); /* Use bg color for text on hover */
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
 /* Flash Summary Styling */
 .flash-summary-box {
     padding: 1rem;

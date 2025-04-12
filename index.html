@@ -162,6 +162,7 @@
                 <p>Choose the ESP32 variant you want to flash</p>
                 
                 <div class="row device-cards">
+                    <!-- Common Devices -->
                     <div class="col-md-4 mb-4">
                         <div class="card device-card" data-device="ESP32">
                             <div class="card-body">
@@ -198,19 +199,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="card device-card" data-device="ESP32-C2">
-                            <div class="card-body">
-                                <h5 class="card-title device-name">ESP32-C2</h5>
-                                <p class="card-text">RISC-V low-power chip with Wi-Fi 4 and Bluetooth 5</p>
-                                <div class="chip-details">
-                                    <span><i class="bi bi-cpu"></i> RISC-V</span>
-                                    <span><i class="bi bi-speedometer"></i> 120MHz</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4">
+                     <div class="col-md-4 mb-4">
                         <div class="card device-card" data-device="ESP32-C3">
                             <div class="card-body">
                                 <h5 class="card-title device-name">ESP32-C3</h5>
@@ -222,7 +211,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-4">
+                     <div class="col-md-4 mb-4">
                         <div class="card device-card" data-device="ESP32-C5">
                             <div class="card-body">
                                 <h5 class="card-title device-name">ESP32-C5</h5>
@@ -246,42 +235,69 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="card device-card" data-device="ESP32-H2">
-                            <div class="card-body">
-                                <h5 class="card-title device-name">ESP32-H2</h5>
-                                <p class="card-text">RISC-V SoC with Thread/Zigbee & Bluetooth 5 LE (No Wi-Fi)</p>
-                                <div class="chip-details">
-                                    <span><i class="bi bi-cpu"></i> RISC-V</span>
-                                    <span><i class="bi bi-speedometer"></i> 96MHz</span>
+                    <!-- End Common Devices -->
+
+                    <!-- Hidden Container for Rare Devices -->
+                    <div id="rareDevicesContainer" class="row d-none w-100"> 
+                         <div class="col-md-4 mb-4">
+                            <div class="card device-card" data-device="ESP32-C2">
+                                <div class="card-body">
+                                    <h5 class="card-title device-name">ESP32-C2</h5>
+                                    <p class="card-text">RISC-V low-power chip with Wi-Fi 4 and Bluetooth 5</p>
+                                    <div class="chip-details">
+                                        <span><i class="bi bi-cpu"></i> RISC-V</span>
+                                        <span><i class="bi bi-speedometer"></i> 120MHz</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="card device-card" data-device="ESP32-P4">
-                            <div class="card-body">
-                                <h5 class="card-title device-name">ESP32-P4</h5>
-                                <p class="card-text">High-performance RISC-V for AI/Media (No Wi-Fi/BT)</p>
-                                <div class="chip-details">
-                                    <span><i class="bi bi-cpu"></i> Dual Core RISC-V</span>
-                                    <span><i class="bi bi-speedometer"></i> 400MHz</span>
+                        <div class="col-md-4 mb-4">
+                            <div class="card device-card" data-device="ESP32-H2">
+                                <div class="card-body">
+                                    <h5 class="card-title device-name">ESP32-H2</h5>
+                                    <p class="card-text">RISC-V SoC with Thread/Zigbee & Bluetooth 5 LE (No Wi-Fi)</p>
+                                    <div class="chip-details">
+                                        <span><i class="bi bi-cpu"></i> RISC-V</span>
+                                        <span><i class="bi bi-speedometer"></i> 96MHz</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="card device-card" data-device="ESP8266">
-                            <div class="card-body">
-                                <h5 class="card-title device-name">ESP8266</h5>
-                                <p class="card-text">Classic low-cost Wi-Fi module</p>
-                                <div class="chip-details">
-                                    <span><i class="bi bi-cpu"></i> Single Core</span>
-                                    <span><i class="bi bi-speedometer"></i> 80MHz</span>
+                        <div class="col-md-4 mb-4">
+                            <div class="card device-card" data-device="ESP32-P4">
+                                <div class="card-body">
+                                    <h5 class="card-title device-name">ESP32-P4</h5>
+                                    <p class="card-text">High-performance RISC-V for AI/Media (No Wi-Fi/BT)</p>
+                                    <div class="chip-details">
+                                        <span><i class="bi bi-cpu"></i> Dual Core RISC-V</span>
+                                        <span><i class="bi bi-speedometer"></i> 400MHz</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card device-card" data-device="ESP8266">
+                                <div class="card-body">
+                                    <h5 class="card-title device-name">ESP8266</h5>
+                                    <p class="card-text">Classic low-cost Wi-Fi module</p>
+                                    <div class="chip-details">
+                                        <span><i class="bi bi-cpu"></i> Single Core</span>
+                                        <span><i class="bi bi-speedometer"></i> 80MHz</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> <!-- End Hidden Container -->
+                </div>
+
+                <!-- Show More/Less Buttons -->
+                <div class="text-center mt-2 mb-4">
+                    <button id="showMoreDevicesButton" class="btn btn-outline-espresso">
+                        <i class="bi bi-chevron-down"></i> Show More Devices
+                    </button>
+                    <button id="showLessDevicesButton" class="btn btn-outline-espresso d-none">
+                        <i class="bi bi-chevron-up"></i> Show Less Devices
+                    </button>
                 </div>
                 
                 <div class="navigation-buttons">

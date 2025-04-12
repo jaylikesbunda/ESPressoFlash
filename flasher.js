@@ -111,6 +111,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const bootloaderAddressInput = getElementById('bootloaderAddress');
         const partitionAddressInput = getElementById('partitionAddress');
         
+        // Get the new elements
+        const showMoreDevicesButton = getElementById('showMoreDevicesButton');
+        const showLessDevicesButton = getElementById('showLessDevicesButton');
+        const rareDevicesContainer = getElementById('rareDevicesContainer');
+        
         // Global variables
         let espLoader = null;
         let transport = null;
@@ -357,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Device selection event listeners
-        const deviceCards = document.querySelectorAll('.device-card');
+        const deviceCards = document.querySelectorAll('.device-card'); // This now includes hidden cards too
         deviceCards.forEach(card => {
             card.addEventListener('click', () => {
                 deviceCards.forEach(c => c.classList.remove('selected'));
@@ -370,6 +375,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (nextToStep2Button) nextToStep2Button.disabled = false;
             });
         });
+        
+        // Show More/Less Devices Button Listeners
+        if (showMoreDevicesButton && rareDevicesContainer && showLessDevicesButton) {
+            showMoreDevicesButton.addEventListener('click', () => {
+                rareDevicesContainer.classList.remove('d-none'); // Show the hidden container
+                showMoreDevicesButton.classList.add('d-none');   // Hide the 'Show More' button
+                showLessDevicesButton.classList.remove('d-none'); // Show the 'Show Less' button
+            });
+
+            showLessDevicesButton.addEventListener('click', () => {
+                rareDevicesContainer.classList.add('d-none');    // Hide the hidden container
+                showLessDevicesButton.classList.add('d-none');    // Hide the 'Show Less' button
+                showMoreDevicesButton.classList.remove('d-none'); // Show the 'Show More' button
+            });
+        }
         
         // Main action event listeners
         connectButton.addEventListener('click', connect);
