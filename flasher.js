@@ -1,44 +1,37 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize the loading animation
+    window.addEventListener("dragover", (event) => {
+        if (!event.target.closest('.custom-file-upload')) return;
+        event.preventDefault();
+    }, false);
+
+    window.addEventListener("drop", (event) => {
+        if (!event.target.closest('.custom-file-upload')) event.preventDefault();
+    }, false);
+
     const loadingAnimation = window.initLoadingAnimation ? window.initLoadingAnimation() : null;
-    
-    // Record the start time of the loading animation
     const loadingStartTime = Date.now();
-    // Minimum display time in milliseconds (3 seconds)
     const minDisplayTime = 3000;
 
-    // Wait for esptoolJS to be available
     const checkEsptoolLoaded = () => {
         if (window.esptoolJS) {
-            // Calculate how long the loading animation has been visible
             const currentTime = Date.now();
             const elapsedTime = currentTime - loadingStartTime;
-            
-            // If the animation hasn't been visible for the minimum time, delay cleanup
             if (elapsedTime < minDisplayTime) {
                 setTimeout(() => {
-                    if (loadingAnimation) {
-                        loadingAnimation.cleanup();
-                    }
+                    if (loadingAnimation) loadingAnimation.cleanup();
                     initializeFlasher();
                 }, minDisplayTime - elapsedTime);
             } else {
-                // The animation has been visible long enough, clean up now
-                if (loadingAnimation) {
-                    loadingAnimation.cleanup();
-                }
+                if (loadingAnimation) loadingAnimation.cleanup();
                 initializeFlasher();
             }
         } else {
             setTimeout(checkEsptoolLoaded, 100);
         }
     };
-    
     checkEsptoolLoaded();
-    
-    // Initialize the flasher once esptoolJS is loaded
+
     function initializeFlasher() {
-        // Helper function to safely get elements
         function getElementById(id) {
             const element = document.getElementById(id);
             if (!element) {
@@ -46,12 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return element;
         }
-        
-        // DOM elements - Steps
+
         const stepContainers = document.querySelectorAll('.step-container');
         const stepCircles = document.querySelectorAll('.stepper-circle');
-        
-        // Navigation buttons
         const nextToStep2Button = getElementById('nextToStep2');
         const backToStep1Button = getElementById('backToStep1');
         const nextToStep3Button = getElementById('nextToStep3');
@@ -59,59 +49,41 @@ document.addEventListener('DOMContentLoaded', () => {
         const nextToStep4Button = getElementById('nextToStep4');
         const backToStep3Button = getElementById('backToStep3');
         const startOverButton = getElementById('startOver');
-        
-        // Action buttons
         const connectButton = getElementById('connectButton');
         const disconnectButton = getElementById('disconnectButton');
         const flashButton = getElementById('flashButton');
         const eraseButton = getElementById('eraseButton');
         const resetButton = getElementById('resetButton');
-        
-        // Status and display elements
         const terminalElem = getElementById('terminal');
         const terminalContainer = getElementById('terminal-container');
         const chipInfoElem = getElementById('chipInfo');
         const flashProgressElem = getElementById('flashProgress');
         const flashSummaryElem = getElementById('flashSummary');
-        const flashETAElem = getElementById('flashETA'); // Get the ETA element
+        const flashETAElem = getElementById('flashETA');
         const selectedDeviceConnectElem = getElementById('selectedDeviceConnect');
         const globalStatusIndicator = getElementById('globalStatusIndicator');
-        
-        // Binary type toggle buttons
         const binaryTypeButtons = document.querySelectorAll('.binary-type-toggle .btn');
-        
-        // Firmware file sections
         const appFirmwareSection = getElementById('appFirmware');
         const bootloaderFirmwareSection = getElementById('bootloaderFirmware');
         const partitionFirmwareSection = getElementById('partitionFirmware');
-        
-        // Flash settings elements
         const baudrateSelect = getElementById('baudrate');
         const flashModeSelect = getElementById('flashMode');
         const flashFreqSelect = getElementById('flashFreq');
         const flashSizeSelect = getElementById('flashSize');
         const resetMethodSelect = getElementById('resetMethod');
         const eraseAllCheckbox = getElementById('eraseAll');
-        
-        // File input elements
         const appFileInput = getElementById('appFile');
         const bootloaderFileInput = getElementById('bootloaderFile');
         const partitionFileInput = getElementById('partitionFile');
         const appFileInfoElem = getElementById('appFileInfo');
         const bootloaderFileInfoElem = getElementById('bootloaderFileInfo');
         const partitionFileInfoElem = getElementById('partitionFileInfo');
-        
-        // Set initial "No file selected" text
         if (appFileInfoElem) appFileInfoElem.textContent = 'No file selected';
         if (bootloaderFileInfoElem) bootloaderFileInfoElem.textContent = 'No file selected';
         if (partitionFileInfoElem) partitionFileInfoElem.textContent = 'No file selected';
-        
-        // Address input elements
         const appAddressInput = getElementById('appAddress');
         const bootloaderAddressInput = getElementById('bootloaderAddress');
         const partitionAddressInput = getElementById('partitionAddress');
-        
-        // Get the new elements
         const showMoreDevicesButton = getElementById('showMoreDevicesButton');
         const showLessDevicesButton = getElementById('showLessDevicesButton');
         const rareDevicesContainer = getElementById('rareDevicesContainer');
@@ -123,8 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const ghostEspDownloadLink = getElementById('ghostEspDownloadLink');
         const marauderVariantSelect = getElementById('marauderVariantSelect');
         const marauderDownloadLink = getElementById('marauderDownloadLink');
-        
-        // Global variables
+
         let espLoader = null;
         let transport = null;
         let connected = false;
@@ -132,22 +103,17 @@ document.addEventListener('DOMContentLoaded', () => {
         let selectedDevice = null;
         let selectedSide = '';
         let currentStep = 1;
-        
-        // Terminal output handler
+
         let espLoaderTerminal = {
             clean() {
-                if (terminalElem) {
-                    terminalElem.innerHTML = '';
-                }
+                if (terminalElem) terminalElem.innerHTML = '';
             },
             writeLine(data) {
                 if (terminalElem) {
                     terminalElem.innerHTML += data + '\n';
                     terminalElem.scrollTop = terminalElem.scrollHeight;
                 }
-                // Update status indicator with latest message
                 updateStatusIndicator('flashing', 'Processing', data);
-                // Also log to console for debugging
                 console.log(data);
             },
             write(data) {
@@ -155,12 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     terminalElem.innerHTML += data;
                     terminalElem.scrollTop = terminalElem.scrollHeight;
                 }
-                // Also log to console for debugging
                 console.log(data);
             }
         };
-        
-        // Device options (filters, flash defaults, etc.)
+
         const deviceOptions = {
             'ESP32': {
                 filters: [
@@ -247,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     { usbVendorId: 0x1A86, usbProductId: 0x55D4 }  // CH9102 (WCH VID) - Added
                 ],
                 defaultFlashMode: 'dio',
-                defaultFlashFreq: '80m', // Assuming similar to C6
+                defaultFlashFreq: '80m',
                 defaultFlashSize: '4MB',
                 appAddress: '0x10000',
                 bootloaderAddress: '0x2000',   // Updated based on user info
@@ -315,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        // Step navigation event listeners
         nextToStep2Button.addEventListener('click', () => {
             if (selectedDevice) {
                 goToStep(2);
@@ -324,9 +287,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 espLoaderTerminal.writeLine("Please select a side first");
             }
         });
-        
+
         backToStep1Button.addEventListener('click', () => goToStep(1));
-        
         nextToStep3Button.addEventListener('click', () => {
             if (connected) {
                 goToStep(3);
@@ -334,16 +296,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 espLoaderTerminal.writeLine("Please connect to a device first");
             }
         });
-        
         backToStep2Button.addEventListener('click', () => goToStep(2));
-        
         nextToStep4Button.addEventListener('click', () => {
             updateFlashSummary();
             goToStep(4);
         });
-        
         backToStep3Button.addEventListener('click', () => goToStep(3));
-        
         startOverButton.addEventListener('click', () => {
             if (connected) {
                 disconnect().then(() => goToStep(1));
@@ -351,23 +309,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 goToStep(1);
             }
         });
-        
-        // Binary type toggle listeners
+
         if (binaryTypeButtons && binaryTypeButtons.length > 0) {
             binaryTypeButtons.forEach(button => {
                 button.addEventListener('click', () => {
-                    // Deactivate all buttons and hide all sections
                     binaryTypeButtons.forEach(btn => btn.classList.remove('active'));
-                    
-                    // Hide all firmware sections
                     if (appFirmwareSection) appFirmwareSection.classList.add('d-none');
                     if (bootloaderFirmwareSection) bootloaderFirmwareSection.classList.add('d-none');
                     if (partitionFirmwareSection) partitionFirmwareSection.classList.add('d-none');
-                    
-                    // Activate clicked button and show corresponding section
                     button.classList.add('active');
                     const binaryType = button.dataset.binary;
-                    
                     if (binaryType === 'app' && appFirmwareSection) {
                         appFirmwareSection.classList.remove('d-none');
                     } else if (binaryType === 'bootloader' && bootloaderFirmwareSection) {
@@ -378,9 +329,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
         }
-        
-        // Device selection event listeners
-        const deviceCards = document.querySelectorAll('.device-card'); // This now includes hidden cards too
+
+        const deviceCards = document.querySelectorAll('.device-card');
         deviceCards.forEach(card => {
             card.addEventListener('click', () => {
                 deviceCards.forEach(c => c.classList.remove('selected'));
@@ -389,128 +339,121 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectedSide = card.querySelector('.device-name').textContent;
                 espLoaderTerminal.writeLine(`Selected: ${selectedSide} (${selectedDevice})`);
                 updateDefaultAddresses();
-                // Enable Step 1 next button
                 if (nextToStep2Button) nextToStep2Button.disabled = false;
             });
         });
-        
-        // Show More/Less Devices Button Listeners
+
         if (showMoreDevicesButton && rareDevicesContainer && showLessDevicesButton) {
             showMoreDevicesButton.addEventListener('click', () => {
-                rareDevicesContainer.classList.remove('d-none'); // Show the hidden container
-                showMoreDevicesButton.classList.add('d-none');   // Hide the 'Show More' button
-                showLessDevicesButton.classList.remove('d-none'); // Show the 'Show Less' button
+                rareDevicesContainer.classList.remove('d-none');
+                showMoreDevicesButton.classList.add('d-none');
+                showLessDevicesButton.classList.remove('d-none');
             });
 
             showLessDevicesButton.addEventListener('click', () => {
-                rareDevicesContainer.classList.add('d-none');    // Hide the hidden container
-                showLessDevicesButton.classList.add('d-none');    // Hide the 'Show Less' button
-                showMoreDevicesButton.classList.remove('d-none'); // Show the 'Show More' button
+                rareDevicesContainer.classList.add('d-none');
+                showLessDevicesButton.classList.add('d-none');
+                showMoreDevicesButton.classList.remove('d-none');
             });
         }
-        
-        // Main action event listeners
+
         connectButton.addEventListener('click', connect);
         disconnectButton.addEventListener('click', disconnect);
         flashButton.addEventListener('click', flash);
         eraseButton.addEventListener('click', eraseFlash);
         resetButton.addEventListener('click', resetDevice);
-        
-        // Add this function to handle drag and drop events AND file input changes
+
         if (appFirmwareSection) {
             const appDropZone = appFirmwareSection.querySelector('.custom-file-upload');
             setupFileInputHandling(appDropZone, appFileInput, appFileInfoElem);
         }
-
         if (bootloaderFirmwareSection) {
             const bootloaderDropZone = bootloaderFirmwareSection.querySelector('.custom-file-upload');
             setupFileInputHandling(bootloaderDropZone, bootloaderFileInput, bootloaderFileInfoElem);
         }
-
         if (partitionFirmwareSection) {
             const partitionDropZone = partitionFirmwareSection.querySelector('.custom-file-upload');
             setupFileInputHandling(partitionDropZone, partitionFileInput, partitionFileInfoElem);
         }
-        
-        // RENAME setupDragAndDrop to setupFileInputHandling and modify it
+
         function setupFileInputHandling(dropZone, fileInput, infoElement) {
             if (!dropZone || !fileInput || !infoElement) {
-                console.error("Missing elements:", fileInput?.id);
+                console.error("Missing elements for file input handling:", fileInput?.id);
                 return;
             }
-            
-            // Direct file input event listener
+            const updateDisplay = (file) => {
+                const fileSizeKB = Math.round(file.size / 1024);
+                infoElement.textContent = `${file.name} (${fileSizeKB} KB)`;
+                const uploadLabel = dropZone.querySelector('span');
+                if (uploadLabel) {
+                    uploadLabel.innerHTML = `<i class="bi bi-file-earmark-check"></i> ${file.name}`;
+                }
+                dropZone.classList.add('file-uploaded');
+                updateBinaryTypeIndicators();
+                updateButtonStates();
+            };
             fileInput.onchange = function() {
-                console.log("DIRECT onchange triggered for", fileInput.id);
-                
                 if (this.files && this.files.length > 0) {
-                    const file = this.files[0];
-                    const fileSizeKB = Math.round(file.size / 1024);
-                    
-                    // Update display immediately
-                    infoElement.textContent = `${file.name} (${fileSizeKB} KB)`;
-                    
-                    // Update label
+                    updateDisplay(this.files[0]);
+                } else {
+                    infoElement.textContent = 'No file selected';
                     const uploadLabel = dropZone.querySelector('span');
                     if (uploadLabel) {
-                        uploadLabel.innerHTML = `<i class="bi bi-file-earmark-check"></i> ${file.name}`;
+                        uploadLabel.innerHTML = `<i class="bi bi-upload"></i> Upload ${fileInput.id.replace('File', '')} Binary`;
                     }
-                    
-                    // Add styling
-                    dropZone.classList.add('file-uploaded');
-                    
-                    // Debug info
-                    console.log({
-                        inputId: fileInput.id,
-                        fileName: file.name,
-                        fileSize: fileSizeKB,
-                        element: infoElement,
-                        text: infoElement.textContent
-                    });
+                    dropZone.classList.remove('file-uploaded');
+                    updateBinaryTypeIndicators();
+                    updateButtonStates();
                 }
             };
-            
-            // Click handler for the dropzone - use simpler approach
-            dropZone.onclick = function(e) {
+            dropZone.onclick = (e) => {
+                if (e.target !== fileInput) {
+                    fileInput.click();
+                }
+            };
+            dropZone.addEventListener('dragover', (event) => {
+                event.stopPropagation();
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'copy';
+                dropZone.classList.add('drag-over');
+            });
+            dropZone.addEventListener('dragleave', (event) => {
+                event.stopPropagation();
+                event.preventDefault();
+                dropZone.classList.remove('drag-over');
+            });
+            dropZone.addEventListener('drop', e => {
+                e.preventDefault();
                 e.stopPropagation();
-            };
-            
-            // Add a global debug helper with direct DOM reference
-            window[fileInput.id + '_debug'] = function() {
-                console.log("DEBUG:", fileInput.id, {
-                    hasFiles: fileInput.files && fileInput.files.length > 0,
-                    fileName: fileInput.files?.[0]?.name,
-                    infoText: infoElement.textContent,
-                    dropZoneClasses: dropZone.className
-                });
-                
-                // Force update attempt
-                if (fileInput.files && fileInput.files.length > 0) {
-                    infoElement.textContent = fileInput.files[0].name;
-                    dropZone.classList.add('file-uploaded');
-                    console.log("Forced update applied");
+                dropZone.classList.remove('drag-over');
+                const files = e.dataTransfer?.files;
+                if (!files?.length) return;
+                const file = files[0];
+                if (!file.name.toLowerCase().endsWith('.bin')) {
+                    espLoaderTerminal.writeLine('⚠️ Only .bin files accepted');
+                    return;
                 }
-            };
-            
-            console.log("Setup COMPLETE for", fileInput.id);
+                try { fileInput.files = files; } catch (_) {}
+                const changeEvent = new Event('change');
+                fileInput.dispatchEvent(changeEvent);
+            });
+            if (window[fileInput.id + '_debug']) {
+                delete window[fileInput.id + '_debug'];
+            }
+            window[fileInput.id + '_debug'] = function() {};
+            console.log("File input handling (including drag/drop) setup COMPLETE for", fileInput.id);
         }
-        
-        // Helper function to navigate between steps
+
         function goToStep(step) {
-            // Hide all steps and deactivate all circles
             stepContainers.forEach(container => container.classList.remove('active'));
             stepCircles.forEach(circle => {
                 circle.classList.remove('active');
                 circle.classList.remove('completed');
             });
-            
-            // Show the target step
             const targetStepContainer = document.getElementById(`step${step}`);
             if (targetStepContainer) {
                 targetStepContainer.classList.add('active');
             }
-            
-            // Update stepper circles
             for (let i = 0; i < stepCircles.length; i++) {
                 if (i + 1 < step) {
                     stepCircles[i].classList.add('completed');
@@ -518,30 +461,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     stepCircles[i].classList.add('active');
                 }
             }
-            
             currentStep = step;
-            // Re-evaluate button states when changing steps
             updateButtonStates();
         }
-        
-        // Update default addresses based on selected device
+
         function updateDefaultAddresses() {
             if (selectedDevice && deviceOptions[selectedDevice]) {
                 const options = deviceOptions[selectedDevice];
-                
-                // Set default flash parameters
                 flashModeSelect.value = options.defaultFlashMode;
                 flashFreqSelect.value = options.defaultFlashFreq;
                 flashSizeSelect.value = options.defaultFlashSize;
-                
-                // Set default addresses
                 if (appAddressInput) appAddressInput.value = options.appAddress;
                 if (bootloaderAddressInput) bootloaderAddressInput.value = options.bootloaderAddress;
                 if (partitionAddressInput) partitionAddressInput.value = options.partitionAddress;
             }
         }
-        
-        // Update file info when file is selected
+
         function updateFileInfo(fileInput, infoElement) {
             if (fileInput.files && fileInput.files.length > 0) {
                 const file = fileInput.files[0];
@@ -551,124 +486,84 @@ document.addEventListener('DOMContentLoaded', () => {
                 infoElement.textContent = 'No file selected';
             }
         }
-        
-        // Update flash summary before flashing
+
         function updateFlashSummary() {
-            flashSummaryElem.innerHTML = ''; // Clear previous summary
-            flashSummaryElem.classList.add('flash-summary-box'); // Add a class for styling
-            
+            flashSummaryElem.innerHTML = '';
+            flashSummaryElem.classList.add('flash-summary-box');
             let hasBinaries = false;
-            
-            // Helper to add summary items
             const addSummaryItem = (icon, text) => {
                 flashSummaryElem.innerHTML += `<div class="summary-item"><i class="bi ${icon} me-2"></i> ${text}</div>`;
             };
-
-            // Check application firmware
             if (appFileInput && appFileInput.files && appFileInput.files.length > 0) {
                 const file = appFileInput.files[0];
                 const address = appAddressInput.value;
                 addSummaryItem('bi-file-earmark-binary', `Application: ${file.name} at ${address}`);
                 hasBinaries = true;
             }
-            
-            // Check bootloader firmware
             if (bootloaderFileInput && bootloaderFileInput.files && bootloaderFileInput.files.length > 0) {
                 const file = bootloaderFileInput.files[0];
                 const address = bootloaderAddressInput.value;
                 addSummaryItem('bi-hdd-network', `Bootloader: ${file.name} at ${address}`);
                 hasBinaries = true;
             }
-            
-            // Check partition table
             if (partitionFileInput && partitionFileInput.files && partitionFileInput.files.length > 0) {
                 const file = partitionFileInput.files[0];
                 const address = partitionAddressInput.value;
                 addSummaryItem('bi-table', `Partition Table: ${file.name} at ${address}`);
                 hasBinaries = true;
             }
-            
             if (!hasBinaries) {
                 flashSummaryElem.innerHTML = '<div class="summary-item text-warning"><i class="bi bi-exclamation-triangle me-2"></i> No firmware files selected</div>';
                 flashButton.disabled = true;
             } else {
                 flashButton.disabled = false;
             }
-            
-            // Add flash settings
-             addSummaryItem('bi-gear', `Settings: ${flashModeSelect.value.toUpperCase()}, ${flashFreqSelect.value}, ${flashSizeSelect.value}`);
-            
-            // Add erase flag
+            addSummaryItem('bi-gear', `Settings: ${flashModeSelect.value.toUpperCase()}, ${flashFreqSelect.value}, ${flashSizeSelect.value}`);
             if (eraseAllCheckbox.checked) {
-                 addSummaryItem('bi-eraser-fill text-warning', '<strong>Erase all flash before programming</strong>');
+                addSummaryItem('bi-eraser-fill text-warning', '<strong>Erase all flash before programming</strong>');
             }
         }
-        
+
         function hasFirmwareFilesSelected() {
             return (appFileInput && appFileInput.files && appFileInput.files.length > 0) ||
                 (bootloaderFileInput && bootloaderFileInput.files && bootloaderFileInput.files.length > 0) ||
                 (partitionFileInput && partitionFileInput.files && partitionFileInput.files.length > 0);
         }
-        
+
         async function connect() {
             if (!selectedDevice) {
                 espLoaderTerminal.writeLine("Please select a device type first");
                 return;
             }
-
-            // Disable connect button during connection attempt
-             if (connectButton) connectButton.disabled = true;
-
+            if (connectButton) connectButton.disabled = true;
             try {
                 espLoaderTerminal.writeLine(`Requesting WebSerial port. Select your device from the popup...`);
                 const serialOptions = {};
-                // Add filters based on selected device if available
                 if (selectedDevice && deviceOptions[selectedDevice] && deviceOptions[selectedDevice].filters) {
                     serialOptions.filters = deviceOptions[selectedDevice].filters;
                     espLoaderTerminal.writeLine(`Applying filters: ${JSON.stringify(serialOptions.filters)}`);
                 } else {
-                     espLoaderTerminal.writeLine(`No specific filters applied for ${selectedDevice || 'unknown device'}.`);
+                    espLoaderTerminal.writeLine(`No specific filters applied for ${selectedDevice || 'unknown device'}.`);
                 }
-
                 const device = await navigator.serial.requestPort(serialOptions);
                 transport = new window.esptoolJS.Transport(device);
-
                 espLoaderTerminal.writeLine("Connecting to device...");
                 updateStatusIndicator('flashing', 'Connecting...', '');
-
-
-                // Create loader
                 const baudrate = parseInt(baudrateSelect.value);
-                // Let's add enableTracing for more detailed logs if needed
                 espLoader = new window.esptoolJS.ESPLoader({
                     transport: transport,
                     baudrate: baudrate,
                     terminal: espLoaderTerminal,
-                    // --- CHANGE: Use main() which handles reset/sync ---
-                    // The reset method dropdown is not directly used by main()
-                    // main() uses its internal reset logic.
-                    // We might need to revisit reset strategy if main() fails.
-                    enableTracing: true // Add detailed tracing
+                    enableTracing: true
                 });
-
-
-                // --- CHANGE: Use main() instead of connect() ---
-                // main() handles the reset sequence based on chip type usually.
-                // It combines connect, sync, and reading chip info.
-                chipType = await espLoader.main(); // Returns chip name string
+                chipType = await espLoader.main();
                 espLoaderTerminal.writeLine(`Connected to ${selectedSide} (${chipType})`);
-                // --- End Change ---
-
                 let chipInfoText = `<span class="status-indicator status-connected"></span> Connected to ${selectedSide} (${chipType})`;
                 chipInfoElem.innerHTML = chipInfoText;
-
-                // Update UI
                 connected = true;
-                updateButtonStates(); // Will enable disconnect, flash, erase etc.
-
-                // Get flash size (optional, but good confirmation)
+                updateButtonStates();
                 try {
-                    const flashSizeBytes = await espLoader.getFlashSize(); // Now safe to call after main()
+                    const flashSizeBytes = await espLoader.getFlashSize();
                     if (flashSizeBytes) {
                         const sizeInMB = flashSizeBytes / (1024 * 1024);
                         espLoaderTerminal.writeLine(`Flash size: ${sizeInMB} MB`);
@@ -676,14 +571,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (error) {
                     espLoaderTerminal.writeLine("Couldn't determine flash size");
                 }
-
-                // Enable next button (Step 3)
                 if (nextToStep3Button) nextToStep3Button.disabled = false;
-
-                // Update status indicator
                 updateStatusIndicator('success', 'Connected', `${selectedSide} (${chipType})`);
-
-                // Log device info (remains useful)
                 espLoaderTerminal.writeLine("Device info:");
                 try {
                     if (device.getInfo) {
@@ -694,47 +583,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (e) {
                     espLoaderTerminal.writeLine("Could not get device details");
                 }
-
-                // --- REMOVED: Redundant sync() call ---
-                // const syncAttempt = await espLoader.sync();
-                // espLoaderTerminal.writeLine("Bootloader sync " + (syncAttempt ? "successful" : "failed"));
-                // main() already handles synchronization.
-
             } catch (error) {
                 console.error("Error during connection with main():", error);
-                let userMessage = `Error: ${error.message}`; // Default message for terminal
-                let chipInfoMessage = `<span class="status-indicator status-disconnected"></span> Connection failed`; // Default for chipInfoElem
-                let statusIndicatorDetails = `Error: ${error.message}`; // Default for status indicator details
-                let statusIndicatorTitle = 'Connection Failed'; // Default title
-
-                // Check for specific error types
+                let userMessage = `Error: ${error.message}`;
+                let chipInfoMessage = `<span class="status-indicator status-disconnected"></span> Connection failed`;
+                let statusIndicatorDetails = `Error: ${error.message}`;
+                let statusIndicatorTitle = 'Connection Failed';
                 const errorStr = error.message.toLowerCase();
-
                 if (errorStr.includes("failed to connect") ||
                     errorStr.includes("timed out waiting for packet") ||
                     errorStr.includes("invalid head of packet") ||
                     errorStr.includes("no serial data received")) {
-                    // Bootloader/Sync specific errors
                     userMessage = `Connection failed. Ensure the device is in bootloader mode (hold BOOT, press RESET) and try again. (Error: ${error.message})`;
                     chipInfoMessage = `<span class="status-indicator status-disconnected"></span> Failed: Check Bootloader Mode`;
                     statusIndicatorTitle = 'Check Bootloader Mode';
                     statusIndicatorDetails = 'Hold BOOT/FLASH, press RESET, then try connecting.';
-                } else if (errorStr.includes("access denied") || 
-                           errorStr.includes("port is already open") ||
-                           errorStr.includes("failed to open serial port")) {
-                    // Port access errors
+                } else if (errorStr.includes("access denied") ||
+                    errorStr.includes("port is already open") ||
+                    errorStr.includes("failed to open serial port")) {
                     userMessage = `Error: Could not open serial port. Is it already open in another program (like Arduino IDE, PlatformIO Monitor)? Close other connections and try again. (Error: ${error.message})`;
                     chipInfoMessage = `<span class="status-indicator status-disconnected"></span> Failed: Port In Use?`;
                     statusIndicatorTitle = 'Port Access Error';
                     statusIndicatorDetails = 'Close other serial programs (IDE, Monitor) and retry.';
                 } else if (errorStr.includes("the device has been lost")) {
-                    // Device disconnected errors
                     userMessage = `Error: Device disconnected during connection attempt. Check cable and connection. (Error: ${error.message})`;
                     chipInfoMessage = `<span class="status-indicator status-disconnected"></span> Failed: Device Lost`;
                     statusIndicatorTitle = 'Device Disconnected';
                     statusIndicatorDetails = 'Check USB cable and connection.';
                 } else {
-                    // Generic fallback for other errors
                     userMessage = `Connection Error: ${error.message}`;
                      chipInfoMessage = `<span class="status-indicator status-disconnected"></span> Connection Failed`;
                      statusIndicatorTitle = 'Connection Failed';
@@ -1269,7 +1145,61 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        async function populateRepoOptions(owner, repo, selectElementId, fileExtension = '.zip', defaultOptionText = '-- Select an option --') {
+        // Add a mapping for nice names (based on the provided YAML)
+        const ghostEspNiceNames = {
+            "esp32-generic.zip": "Generic ESP32",
+            "esp32s2-generic.zip": "Generic ESP32-S2",
+            "esp32s3-generic.zip": "Generic ESP32-S3",
+            "esp32c3-generic.zip": "Generic ESP32-C3",
+            "esp32c6-generic.zip": "Generic ESP32-C6",
+            "esp32v5_awok.zip": "Awok V5 (ESP32-S2)",
+            "ghostboard.zip": "GhostBoard (ESP32-C6)",
+            "MarauderV4_FlipperHub.zip": "Marauder V4 / FlipperHub (ESP32)",
+            "MarauderV6_AwokDual.zip": "Marauder V6 / Awok Dual (ESP32)",
+            "AwokMini.zip": "Awok Mini (ESP32)",
+            "ESP32-S3-Cardputer.zip": "M5Stack Cardputer (ESP32-S3)",
+            "CYD2USB.zip": "CYD2USB (ESP32)",
+            "CYDMicroUSB.zip": "CYD MicroUSB (ESP32)",
+            "CYDDualUSB.zip": "CYD Dual USB (ESP32)",
+            "CYD2USB2.4Inch.zip": "CYD 2.4 Inch USB (ESP32)",
+            "CYD2USB2.4Inch_C.zip": "CYD 2.4 Inch USB-C (ESP32)",
+            "Waveshare_LCD.zip": "Waveshare 7\" LCD (ESP32-S3)",
+            "Crowtech_LCD.zip": "Crowtech 7\" LCD (ESP32-S3)"
+        };
+
+        // Mapping from build target (idf_target) to chip name used in 'selectedDevice'
+        const ghostEspChipMapping = {
+            "esp32": "ESP32",
+            "esp32s2": "ESP32-S2",
+            "esp32s3": "ESP32-S3",
+            "esp32c3": "ESP32-C3",
+            "esp32c6": "ESP32-C6"
+            // Add other mappings if GhostESP supports more chips later
+        };
+
+        // This mapping helps link the zip name back to the target chip
+        const ghostEspZipToTarget = {
+            "esp32-generic.zip": "esp32",
+            "esp32s2-generic.zip": "esp32s2",
+            "esp32s3-generic.zip": "esp32s3",
+            "esp32c3-generic.zip": "esp32c3",
+            "esp32c6-generic.zip": "esp32c6",
+            "esp32v5_awok.zip": "esp32s2",
+            "ghostboard.zip": "esp32c6",
+            "MarauderV4_FlipperHub.zip": "esp32",
+            "MarauderV6_AwokDual.zip": "esp32",
+            "AwokMini.zip": "esp32",
+            "ESP32-S3-Cardputer.zip": "esp32s3",
+            "CYD2USB.zip": "esp32",
+            "CYDMicroUSB.zip": "esp32",
+            "CYDDualUSB.zip": "esp32",
+            "CYD2USB2.4Inch.zip": "esp32",
+            "CYD2USB2.4Inch_C.zip": "esp32",
+            "Waveshare_LCD.zip": "esp32s3",
+            "Crowtech_LCD.zip": "esp32s3"
+        };
+
+        async function populateRepoOptions(owner, repo, selectElementId, fileExtension = '.zip', defaultOptionText = '-- Select an option --', filterChip = null) {
             const selectElement = getElementById(selectElementId);
             if (!selectElement) {
                 console.error(`Select element with ID '${selectElementId}' not found.`);
@@ -1295,17 +1225,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 let foundFiles = false;
                 data.assets.forEach(asset => {
                     if (asset.name.endsWith(fileExtension)) {
+                        // --- Filtering Logic for GhostESP ---
+                        if (repo === 'Ghost_ESP' && filterChip) {
+                            const assetTarget = ghostEspZipToTarget[asset.name];
+                            const mappedChip = ghostEspChipMapping[assetTarget];
+                            if (mappedChip !== filterChip) {
+                                return; // Skip this asset if it doesn't match the selected chip
+                            }
+                        }
+                        // --- End Filtering Logic ---
+
                         foundFiles = true;
                         const option = document.createElement('option');
                         option.value = asset.browser_download_url;
-                        option.textContent = asset.name;
+
+                        // Use nice name if available for GhostESP, otherwise use asset name
+                        option.textContent = (repo === 'Ghost_ESP' && ghostEspNiceNames[asset.name]) 
+                                             ? ghostEspNiceNames[asset.name] 
+                                             : asset.name;
+
                         selectElement.appendChild(option);
                     }
                 });
 
                 if (!foundFiles) {
-                     espLoaderTerminal.writeLine(`⚠️ No ${fileExtension} assets found in the latest ${repo} release.`);
-                     selectElement.innerHTML = `<option value="">No ${fileExtension} files found</option>`;
+                    let message = `No ${fileExtension} assets found`;
+                    if (repo === 'Ghost_ESP' && filterChip) {
+                        message += ` for the selected chip (${filterChip})`;
+                    }
+                     message += ` in the latest ${repo} release.`;
+                     espLoaderTerminal.writeLine(`⚠️ ${message}`);
+                     selectElement.innerHTML = `<option value="">${message}</option>`;
                 } else {
                      selectElement.disabled = false;
                 }
@@ -1337,6 +1287,18 @@ document.addEventListener('DOMContentLoaded', () => {
             firmwareSourceSelect.addEventListener('change', () => {
                 const selectedSource = firmwareSourceSelect.value;
 
+                // Reset file inputs if switching away from manual
+                 if (selectedSource !== 'manual') {
+                     appFileInput.value = '';
+                     bootloaderFileInput.value = '';
+                     partitionFileInput.value = '';
+                     if(appFileInfoElem) appFileInfoElem.textContent = 'No file selected';
+                     if(bootloaderFileInfoElem) bootloaderFileInfoElem.textContent = 'No file selected';
+                     if(partitionFileInfoElem) partitionFileInfoElem.textContent = 'No file selected';
+                     // Clear visual indicators too if you have them
+                     updateBinaryTypeIndicators(); 
+                 }
+
                 const allDownloadSections = [ghostEspDownloadSection, marauderDownloadSection];
                 const allDownloadLinks = [ghostEspDownloadLink, marauderDownloadLink];
 
@@ -1354,7 +1316,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     manualUploadSection.classList.remove('d-none');
                 } else if (selectedSource === 'ghostesp') {
                     ghostEspDownloadSection?.classList.remove('d-none');
-                    populateRepoOptions('Spooks4576', 'Ghost_ESP', 'ghostEspVariantSelect', '.zip', '-- Select a GhostESP ZIP... --');
+                    // Pass the selectedDevice (chip type) to filter the options
+                    populateRepoOptions('Spooks4576', 'Ghost_ESP', 'ghostEspVariantSelect', '.zip', '-- Select a GhostESP ZIP... --', selectedDevice); 
                 } else if (selectedSource === 'marauder') {
                     marauderDownloadSection?.classList.remove('d-none');
                     populateRepoOptions('justcallmekoko', 'ESP32Marauder', 'marauderVariantSelect', '.bin', '-- Select a Marauder BIN... --');
@@ -1362,11 +1325,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 
             });
 
-            firmwareSourceSelect.dispatchEvent(new Event('change'));
+            // Trigger change on load IF a device is already selected maybe?
+            // Or just let manual be default.
+            firmwareSourceSelect.dispatchEvent(new Event('change')); 
         }
 
         setupDownloadLinkListener(ghostEspVariantSelect, ghostEspDownloadLink);
         setupDownloadLinkListener(marauderVariantSelect, marauderDownloadLink);
+
+        // Add this function to update the binary type buttons to show which have files
+        function updateBinaryTypeIndicators() {
+            // Clear existing badges first
+            document.querySelectorAll('.file-badge').forEach(badge => badge.remove());
+            
+            // Check if app file is selected
+            if (appFileInput && appFileInput.files && appFileInput.files.length > 0) {
+                const appButton = document.querySelector('[data-binary="app"]');
+                if (appButton) {
+                    appButton.insertAdjacentHTML('beforeend', '<span class="file-badge"></span>');
+                }
+            }
+            
+            // Check if bootloader file is selected
+            if (bootloaderFileInput && bootloaderFileInput.files && bootloaderFileInput.files.length > 0) {
+                const bootloaderButton = document.querySelector('[data-binary="bootloader"]');
+                 if (bootloaderButton) {
+                    bootloaderButton.insertAdjacentHTML('beforeend', '<span class="file-badge"></span>');
+                 }
+            }
+            
+            // Check if partition file is selected
+            if (partitionFileInput && partitionFileInput.files && partitionFileInput.files.length > 0) {
+                const partitionButton = document.querySelector('[data-binary="partition"]');
+                 if (partitionButton) {
+                    partitionButton.insertAdjacentHTML('beforeend', '<span class="file-badge"></span>');
+                 }
+            }
+        }
     }
 
     // Add this function to update the modern status indicator
@@ -1401,33 +1396,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
                 default:
                     statusIcon.classList.add('bi-cpu');
-            }
-        }
-    }
-
-    // Add this function to update the binary type buttons to show which have files
-    function updateBinaryTypeIndicators() {
-        // Check if app file is selected
-        if (appFileInput && appFileInput.files && appFileInput.files.length > 0) {
-            const appButton = document.querySelector('[data-binary="app"]');
-            if (appButton && !appButton.querySelector('.file-badge')) {
-                appButton.innerHTML += '<span class="file-badge"></span>';
-            }
-        }
-        
-        // Check if bootloader file is selected
-        if (bootloaderFileInput && bootloaderFileInput.files && bootloaderFileInput.files.length > 0) {
-            const bootloaderButton = document.querySelector('[data-binary="bootloader"]');
-            if (bootloaderButton && !bootloaderButton.querySelector('.file-badge')) {
-                bootloaderButton.innerHTML += '<span class="file-badge"></span>';
-            }
-        }
-        
-        // Check if partition file is selected
-        if (partitionFileInput && partitionFileInput.files && partitionFileInput.files.length > 0) {
-            const partitionButton = document.querySelector('[data-binary="partition"]');
-            if (partitionButton && !partitionButton.querySelector('.file-badge')) {
-                partitionButton.innerHTML += '<span class="file-badge"></span>';
             }
         }
     }
