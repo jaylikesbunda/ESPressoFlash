@@ -117,9 +117,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const rareDevicesContainer = getElementById('rareDevicesContainer');
         const firmwareSourceSelect = getElementById('firmwareSourceSelect');
         const ghostEspDownloadSection = getElementById('ghostEspDownloadSection');
+        const marauderDownloadSection = getElementById('marauderDownloadSection');
         const manualUploadSection = getElementById('manualUploadSection');
-        const repoSelect = getElementById('repoSelect');
-        const downloadFirmwareLink = getElementById('downloadFirmwareLink');
+        const ghostEspVariantSelect = getElementById('ghostEspVariantSelect');
+        const ghostEspDownloadLink = getElementById('ghostEspDownloadLink');
+        const marauderVariantSelect = getElementById('marauderVariantSelect');
+        const marauderDownloadLink = getElementById('marauderDownloadLink');
         
         // Global variables
         let espLoader = null;
@@ -1266,15 +1269,15 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        async function populateRepoOptions(owner, repo, selectElementId, defaultOptionText = '-- Select an option --') {
+        async function populateRepoOptions(owner, repo, selectElementId, fileExtension = '.zip', defaultOptionText = '-- Select an option --') {
             const selectElement = getElementById(selectElementId);
             if (!selectElement) {
                 console.error(`Select element with ID '${selectElementId}' not found.`);
                 return;
             }
 
-            selectElement.innerHTML = `<option value="">${defaultOptionText}</option>`; 
-            selectElement.disabled = true; 
+            selectElement.innerHTML = `<option value="">${defaultOptionText}</option>`;
+            selectElement.disabled = true;
 
             try {
                 const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
@@ -1289,22 +1292,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                let foundZip = false;
+                let foundFiles = false;
                 data.assets.forEach(asset => {
-                    if (asset.name.endsWith('.zip')) {
-                        foundZip = true;
+                    if (asset.name.endsWith(fileExtension)) {
+                        foundFiles = true;
                         const option = document.createElement('option');
-                        option.value = asset.browser_download_url; 
-                        option.textContent = asset.name; 
+                        option.value = asset.browser_download_url;
+                        option.textContent = asset.name;
                         selectElement.appendChild(option);
                     }
                 });
 
-                if (!foundZip) {
-                     espLoaderTerminal.writeLine(`⚠️ No .zip assets found in the latest ${repo} release.`);
-                     selectElement.innerHTML = `<option value="">No .zip files found</option>`;
+                if (!foundFiles) {
+                     espLoaderTerminal.writeLine(`⚠️ No ${fileExtension} assets found in the latest ${repo} release.`);
+                     selectElement.innerHTML = `<option value="">No ${fileExtension} files found</option>`;
                 } else {
-                     selectElement.disabled = false; 
+                     selectElement.disabled = false;
                 }
 
             } catch (error) {
@@ -1314,42 +1317,56 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        function setupDownloadLinkListener(selectElement, linkElement) {
+            if (selectElement && linkElement) {
+                selectElement.addEventListener('change', () => {
+                    if (selectElement.value) {
+                        linkElement.href = selectElement.value;
+                        linkElement.classList.remove('disabled');
+                        linkElement.classList.replace('btn-secondary', 'btn-primary');
+                    } else {
+                        linkElement.href = '#';
+                        linkElement.classList.add('disabled');
+                        linkElement.classList.replace('btn-primary', 'btn-secondary');
+                    }
+                });
+            }
+        }
+
         if (firmwareSourceSelect) {
             firmwareSourceSelect.addEventListener('change', () => {
                 const selectedSource = firmwareSourceSelect.value;
 
+                const allDownloadSections = [ghostEspDownloadSection, marauderDownloadSection];
+                const allDownloadLinks = [ghostEspDownloadLink, marauderDownloadLink];
+
                 manualUploadSection.classList.add('d-none');
-                ghostEspDownloadSection.classList.add('d-none');
-                
-                if (downloadFirmwareLink) { 
-                    downloadFirmwareLink.href = '#';
-                    downloadFirmwareLink.classList.add('disabled');
-                    downloadFirmwareLink.classList.replace('btn-primary', 'btn-secondary');
-                }
+                allDownloadSections.forEach(section => section?.classList.add('d-none'));
+                allDownloadLinks.forEach(link => {
+                    if (link) {
+                        link.href = '#';
+                        link.classList.add('disabled');
+                        link.classList.replace('btn-primary', 'btn-secondary');
+                    }
+                });
 
                 if (selectedSource === 'manual') {
                     manualUploadSection.classList.remove('d-none');
                 } else if (selectedSource === 'ghostesp') {
-                    ghostEspDownloadSection.classList.remove('d-none');
-                    populateRepoOptions('Spooks4576', 'Ghost_ESP', 'repoSelect', '-- Select a variant... --');
+                    ghostEspDownloadSection?.classList.remove('d-none');
+                    populateRepoOptions('Spooks4576', 'Ghost_ESP', 'ghostEspVariantSelect', '.zip', '-- Select a GhostESP ZIP... --');
+                } else if (selectedSource === 'marauder') {
+                    marauderDownloadSection?.classList.remove('d-none');
+                    populateRepoOptions('justcallmekoko', 'ESP32Marauder', 'marauderVariantSelect', '.bin', '-- Select a Marauder BIN... --');
                 }
                 
             });
+
+            firmwareSourceSelect.dispatchEvent(new Event('change'));
         }
 
-        if (repoSelect && downloadFirmwareLink) {
-            repoSelect.addEventListener('change', () => {
-                if (repoSelect.value) {
-                    downloadFirmwareLink.href = repoSelect.value;
-                    downloadFirmwareLink.classList.remove('disabled');
-                    downloadFirmwareLink.classList.replace('btn-secondary', 'btn-primary');
-                } else {
-                    downloadFirmwareLink.href = '#';
-                    downloadFirmwareLink.classList.add('disabled');
-                    downloadFirmwareLink.classList.replace('btn-primary', 'btn-secondary');
-                }
-            });
-        }
+        setupDownloadLinkListener(ghostEspVariantSelect, ghostEspDownloadLink);
+        setupDownloadLinkListener(marauderVariantSelect, marauderDownloadLink);
     }
 
     // Add this function to update the modern status indicator

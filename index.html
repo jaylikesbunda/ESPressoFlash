@@ -380,6 +380,7 @@
                         <select id="firmwareSourceSelect" class="form-select">
                             <option value="manual" selected>Upload Manually</option>
                             <option value="ghostesp">Download GhostESP (Latest)</option>
+                            <option value="marauder">Download Marauder (Latest)</option>
                         </select>
                     </div>
                 </div>
@@ -388,14 +389,30 @@
                     <div class="card-body">
                         <h5 class="card-title">GhostESP Options</h5>
                         <div class="mb-3">
-                            <label for="repoSelect" class="form-label">Select GhostESP Variant</label>
-                            <select id="repoSelect" class="form-select">
+                            <label for="ghostEspVariantSelect" class="form-label">Select GhostESP Variant</label>
+                            <select id="ghostEspVariantSelect" class="form-select"> 
                                 <option value="">-- Loading variants... --</option>
                             </select>
-                            <a id="downloadFirmwareLink" class="btn btn-secondary mt-2 disabled" href="#" target="_blank" role="button">
+                            <a id="ghostEspDownloadLink" class="btn btn-secondary mt-2 disabled" href="#" target="_blank" role="button"> 
                                 <i class="bi bi-github me-1"></i> Download Selected Variant ZIP
                             </a>
                              <small class="form-text text-muted d-block mt-1">Download the ZIP, extract it, then use "Upload Manually" below to select the .bin files.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="marauderDownloadSection" class="card mb-3 d-none">
+                    <div class="card-body">
+                        <h5 class="card-title">Marauder Options</h5>
+                        <div class="mb-3">
+                            <label for="marauderVariantSelect" class="form-label">Select Marauder Binary</label>
+                            <select id="marauderVariantSelect" class="form-select">
+                                <option value="">-- Loading variants... --</option>
+                            </select>
+                            <a id="marauderDownloadLink" class="btn btn-secondary mt-2 disabled" href="#" target="_blank" role="button">
+                                <i class="bi bi-github me-1"></i> Download Selected Binary
+                            </a>
+                            <small class="form-text text-muted d-block mt-1">Download the correct .bin file for your hardware, then use "Upload Manually" below to select it (usually as the Application binary).</small>
                         </div>
                     </div>
                 </div>
