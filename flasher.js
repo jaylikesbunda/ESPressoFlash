@@ -115,6 +115,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const showMoreDevicesButton = getElementById('showMoreDevicesButton');
         const showLessDevicesButton = getElementById('showLessDevicesButton');
         const rareDevicesContainer = getElementById('rareDevicesContainer');
+        const firmwareSourceSelect = getElementById('firmwareSourceSelect');
+        const ghostEspDownloadSection = getElementById('ghostEspDownloadSection');
+        const manualUploadSection = getElementById('manualUploadSection');
+        const repoSelect = getElementById('repoSelect');
+        const downloadFirmwareLink = getElementById('downloadFirmwareLink');
         
         // Global variables
         let espLoader = null;
@@ -1260,6 +1265,91 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+
+        async function populateRepoOptions(owner, repo, selectElementId, defaultOptionText = '-- Select an option --') {
+            const selectElement = getElementById(selectElementId);
+            if (!selectElement) {
+                console.error(`Select element with ID '${selectElementId}' not found.`);
+                return;
+            }
+
+            selectElement.innerHTML = `<option value="">${defaultOptionText}</option>`; 
+            selectElement.disabled = true; 
+
+            try {
+                const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`GitHub API Error: ${response.status} ${response.statusText}`);
+                }
+                const data = await response.json();
+                if (!data.assets || data.assets.length === 0) {
+                    espLoaderTerminal.writeLine(`⚠️ No assets found in the latest ${repo} release.`);
+                    selectElement.innerHTML = `<option value="">No assets found</option>`;
+                    return;
+                }
+
+                let foundZip = false;
+                data.assets.forEach(asset => {
+                    if (asset.name.endsWith('.zip')) {
+                        foundZip = true;
+                        const option = document.createElement('option');
+                        option.value = asset.browser_download_url; 
+                        option.textContent = asset.name; 
+                        selectElement.appendChild(option);
+                    }
+                });
+
+                if (!foundZip) {
+                     espLoaderTerminal.writeLine(`⚠️ No .zip assets found in the latest ${repo} release.`);
+                     selectElement.innerHTML = `<option value="">No .zip files found</option>`;
+                } else {
+                     selectElement.disabled = false; 
+                }
+
+            } catch (error) {
+                 console.error(`Error fetching ${repo} data:`, error);
+                 espLoaderTerminal.writeLine(`⚠️ Failed to fetch ${repo} list: ${error.message}`);
+                 selectElement.innerHTML = `<option value="">Error loading variants</option>`;
+            }
+        }
+
+        if (firmwareSourceSelect) {
+            firmwareSourceSelect.addEventListener('change', () => {
+                const selectedSource = firmwareSourceSelect.value;
+
+                manualUploadSection.classList.add('d-none');
+                ghostEspDownloadSection.classList.add('d-none');
+                
+                if (downloadFirmwareLink) { 
+                    downloadFirmwareLink.href = '#';
+                    downloadFirmwareLink.classList.add('disabled');
+                    downloadFirmwareLink.classList.replace('btn-primary', 'btn-secondary');
+                }
+
+                if (selectedSource === 'manual') {
+                    manualUploadSection.classList.remove('d-none');
+                } else if (selectedSource === 'ghostesp') {
+                    ghostEspDownloadSection.classList.remove('d-none');
+                    populateRepoOptions('Spooks4576', 'Ghost_ESP', 'repoSelect', '-- Select a variant... --');
+                }
+                
+            });
+        }
+
+        if (repoSelect && downloadFirmwareLink) {
+            repoSelect.addEventListener('change', () => {
+                if (repoSelect.value) {
+                    downloadFirmwareLink.href = repoSelect.value;
+                    downloadFirmwareLink.classList.remove('disabled');
+                    downloadFirmwareLink.classList.replace('btn-secondary', 'btn-primary');
+                } else {
+                    downloadFirmwareLink.href = '#';
+                    downloadFirmwareLink.classList.add('disabled');
+                    downloadFirmwareLink.classList.replace('btn-primary', 'btn-secondary');
+                }
+            });
+        }
     }
 
     // Add this function to update the modern status indicator
