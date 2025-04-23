@@ -96,6 +96,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const marauderVariantSelect = getElementById('marauderVariantSelect');
         const marauderDownloadLink = getElementById('marauderDownloadLink');
 
+        // Add reference to the new toggle
+        const disableFilterToggle = getElementById('disableFilterToggle');
+
         let espLoader = null;
         let transport = null;
         let connected = false;
@@ -535,18 +538,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 espLoaderTerminal.writeLine("Please select a device type first");
                 return;
             }
-            if (connectButton) connectButton.disabled = true;
+
+            // Disable connect button during connection attempt
+             if (connectButton) connectButton.disabled = true;
+
             try {
                 espLoaderTerminal.writeLine(`Requesting WebSerial port. Select your device from the popup...`);
-                const serialOptions = {};
-                if (selectedDevice && deviceOptions[selectedDevice] && deviceOptions[selectedDevice].filters) {
+                
+                // --- Check Filter Toggle ---
+                let serialOptions = {}; // Default to no filters
+                const filtersDisabled = disableFilterToggle.checked; 
+
+                if (!filtersDisabled && selectedDevice && deviceOptions[selectedDevice] && deviceOptions[selectedDevice].filters) {
                     serialOptions.filters = deviceOptions[selectedDevice].filters;
                     espLoaderTerminal.writeLine(`Applying filters: ${JSON.stringify(serialOptions.filters)}`);
+                } else if (filtersDisabled) {
+                     espLoaderTerminal.writeLine(`Serial port filters disabled by user.`);
                 } else {
-                    espLoaderTerminal.writeLine(`No specific filters applied for ${selectedDevice || 'unknown device'}.`);
+                     espLoaderTerminal.writeLine(`No specific filters applied for ${selectedDevice || 'unknown device'}.`);
                 }
-                const device = await navigator.serial.requestPort(serialOptions);
+                // --- End Check ---
+
+                const device = await navigator.serial.requestPort(serialOptions); // Use potentially modified options
                 transport = new window.esptoolJS.Transport(device);
+
                 espLoaderTerminal.writeLine("Connecting to device...");
                 updateStatusIndicator('flashing', 'Connecting...', '');
                 const baudrate = parseInt(baudrateSelect.value);
