@@ -379,106 +379,129 @@
             </div>
 
             <div class="step-container" id="step3"> <!-- Step 3: Configure -->
-                <h2>Configure Flash Settings</h2>
-                <p>Select a firmware source or upload files manually.</p>
+                <h2>Configure Firmware & Flash Settings</h2>
+                <p>Choose how to provide the firmware.</p>
 
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <label for="firmwareSourceSelect" class="form-label">Firmware Source</label>
-                        <select id="firmwareSourceSelect" class="form-select">
-                            <option value="manual" selected>Upload Manually</option>
-                            <option value="ghostesp">Download GhostESP (Latest)</option>
-                            <option value="marauder">Download Marauder (Latest)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="ghostEspDownloadSection" class="card mb-3 d-none">
-                    <div class="card-body">
-                        <h5 class="card-title">GhostESP Options</h5>
-                        <div class="mb-3">
-                            <label for="ghostEspVariantSelect" class="form-label">Select GhostESP Variant</label>
-                            <select id="ghostEspVariantSelect" class="form-select"> 
-                                <option value="">-- Loading variants... --</option>
-                            </select>
-                            <a id="ghostEspDownloadLink" class="btn btn-secondary mt-2 disabled" href="#" target="_blank" role="button"> 
-                                <i class="bi bi-github me-1"></i> Download Selected Variant ZIP
-                            </a>
-                             <small class="form-text text-muted d-block mt-1">Download the ZIP, extract it, then use "Upload Manually" below to select the .bin files.</small>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="marauderDownloadSection" class="card mb-3 d-none">
-                    <div class="card-body">
-                        <h5 class="card-title">Marauder Options</h5>
-                        <div class="mb-3">
-                            <label for="marauderVariantSelect" class="form-label">Select Marauder Binary</label>
-                            <select id="marauderVariantSelect" class="form-select">
-                                <option value="">-- Loading variants... --</option>
-                            </select>
-                            <a id="marauderDownloadLink" class="btn btn-secondary mt-2 disabled" href="#" target="_blank" role="button">
-                                <i class="bi bi-github me-1"></i> Download Selected Binary
-                            </a>
-                            <small class="form-text text-muted d-block mt-1">Download the correct .bin file for your hardware, then use "Upload Manually" below to select it (usually as the Application binary).</small>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="manualUploadSection" class="card">
-                    <div class="card-body">
-                         <h5 class="card-title">Manual Upload</h5>
-                        <div class="binary-type-toggle">
-                            <button class="btn active" data-binary="app">
-                                <i class="bi bi-file-earmark-binary"></i> Application
-                            </button>
-                            <button class="btn" data-binary="bootloader">
-                                <i class="bi bi-hdd-network"></i> Bootloader
-                            </button>
-                            <button class="btn" data-binary="partition">
-                                <i class="bi bi-table"></i> Partition Table
-                            </button>
-                        </div>
-                        
-                        <div id="appFirmware">
-                            <div class="firmware-upload">
-                                <div class="mb-3">
-                                    <label for="appAddress" class="form-label">App Address</label>
-                                    <input type="text" class="form-control" id="appAddress" value="0x10000">
-                                </div>
-                                <label for="appFile" class="custom-file-upload">
-                                    <span><i class="bi bi-upload"></i> Upload App Binary</span>
-                                </label>
-                                <input type="file" id="appFile" accept=".bin">
-                                <p id="appFileInfo" class="file-info">No file selected</p>
+                <!-- Primary Choice: Download or Manual -->
+                <div class="row firmware-choice-row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card choice-card" id="choiceDownload">
+                            <div class="card-body text-center">
+                                <i class="bi bi-cloud-download choice-icon"></i>
+                                <h5 class="card-title">Download Latest Firmware</h5>
+                                <p class="card-text text-muted">Fetch the latest release directly from GitHub (GhostESP or Marauder).</p>
                             </div>
                         </div>
-                        
-                        <div id="bootloaderFirmware" class="d-none">
-                            <div class="firmware-upload">
-                                <div class="mb-3">
-                                    <label for="bootloaderAddress" class="form-label">Bootloader Address</label>
-                                    <input type="text" class="form-control" id="bootloaderAddress" value="0x1000">
-                                </div>
-                                <label for="bootloaderFile" class="custom-file-upload">
-                                    <span><i class="bi bi-upload"></i> Upload Bootloader Binary</span>
-                                </label>
-                                <input type="file" id="bootloaderFile" accept=".bin">
-                                <p id="bootloaderFileInfo" class="file-info">No file selected</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card choice-card" id="choiceManual">
+                            <div class="card-body text-center">
+                                <i class="bi bi-upload choice-icon"></i>
+                                <h5 class="card-title">Upload Manually</h5>
+                                <p class="card-text text-muted">Select .bin files from your computer.</p>
                             </div>
                         </div>
-                        
-                        <div id="partitionFirmware" class="d-none">
-                            <div class="firmware-upload">
-                                <div class="mb-3">
-                                    <label for="partitionAddress" class="form-label">Partition Address</label>
-                                    <input type="text" class="form-control" id="partitionAddress" value="0x8000">
+                    </div>
+                </div>
+                
+                <!-- Container for Download Options (Initially Hidden) -->
+                <div id="downloadOptionsContainer" class="mb-3 d-none">
+                    <div class="card">
+                        <div class="card-body">
+                            <label for="downloadSourceSelect" class="form-label">Select Project:</label>
+                            <select id="downloadSourceSelect" class="form-select mb-3">
+                                <option value="">-- Select Project --</option>
+                                <option value="ghostesp">GhostESP</option>
+                                <option value="marauder">Marauder</option>
+                            </select>
+
+                            <!-- GhostESP Specific Section -->
+                            <div id="ghostEspDownloadSection" class="download-subsection d-none">
+                                <label for="ghostEspVariantSelect" class="form-label">Select GhostESP Variant (auto-loads files):</label>
+                                <select id="ghostEspVariantSelect" class="form-select">
+                                    <option value="">-- Select Variant --</option>
+                                </select>
+                                <!-- Status Area for GhostESP download/extract -->
+                                <div id="ghostEspStatus" class="form-text text-muted mt-2" style="min-height: 1.5em;">
+                                    Select a variant to begin loading firmware files.
                                 </div>
-                                <label for="partitionFile" class="custom-file-upload">
-                                    <span><i class="bi bi-upload"></i> Upload Partition Binary</span>
-                                </label>
-                                <input type="file" id="partitionFile" accept=".bin">
-                                <p id="partitionFileInfo" class="file-info">No file selected</p>
+                                <!-- Removed redundant download button and text -->
+                            </div>
+
+                            <!-- Marauder Specific Section -->
+                            <div id="marauderDownloadSection" class="download-subsection d-none">
+                                <label for="marauderVariantSelect" class="form-label">Select Marauder Binary:</label>
+                                <select id="marauderVariantSelect" class="form-select">
+                                    <option value="">-- Select Binary --</option>
+                                </select>
+                                <a id="marauderDownloadLink" class="btn btn-secondary mt-2 disabled" href="#" target="_blank" role="button">
+                                    <i class="bi bi-github me-1"></i> Download Selected Binary
+                                </a>
+                                <div class="form-text text-muted mt-1">
+                                    Download the .bin, then switch to "Upload Manually" to select it (usually for Application).
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Container for Manual Upload (Initially Hidden) -->
+                <div id="manualUploadContainer" class="mb-3 d-none">
+                    <div id="manualUploadSection" class="card">
+                        <div class="card-body">
+                             <h5 class="card-title">Manual Upload</h5>
+                            <div class="binary-type-toggle">
+                                <button class="btn active" data-binary="app">
+                                    <i class="bi bi-file-earmark-binary"></i> Application
+                                </button>
+                                <button class="btn" data-binary="bootloader">
+                                    <i class="bi bi-hdd-network"></i> Bootloader
+                                </button>
+                                <button class="btn" data-binary="partition">
+                                    <i class="bi bi-table"></i> Partition Table
+                                </button>
+                            </div>
+                            
+                            <div id="appFirmware">
+                                <div class="firmware-upload">
+                                    <div class="mb-3">
+                                        <label for="appAddress" class="form-label">App Address</label>
+                                        <input type="text" class="form-control" id="appAddress" value="0x10000">
+                                    </div>
+                                    <label for="appFile" class="custom-file-upload">
+                                        <span><i class="bi bi-upload"></i> Upload App Binary</span>
+                                    </label>
+                                    <input type="file" id="appFile" accept=".bin">
+                                    <p id="appFileInfo" class="file-info">No file selected</p>
+                                </div>
+                            </div>
+                            
+                            <div id="bootloaderFirmware" class="d-none">
+                                <div class="firmware-upload">
+                                    <div class="mb-3">
+                                        <label for="bootloaderAddress" class="form-label">Bootloader Address</label>
+                                        <input type="text" class="form-control" id="bootloaderAddress" value="0x1000">
+                                    </div>
+                                    <label for="bootloaderFile" class="custom-file-upload">
+                                        <span><i class="bi bi-upload"></i> Upload Bootloader Binary</span>
+                                    </label>
+                                    <input type="file" id="bootloaderFile" accept=".bin">
+                                    <p id="bootloaderFileInfo" class="file-info">No file selected</p>
+                                </div>
+                            </div>
+                            
+                            <div id="partitionFirmware" class="d-none">
+                                <div class="firmware-upload">
+                                    <div class="mb-3">
+                                        <label for="partitionAddress" class="form-label">Partition Address</label>
+                                        <input type="text" class="form-control" id="partitionAddress" value="0x8000">
+                                    </div>
+                                    <label for="partitionFile" class="custom-file-upload">
+                                        <span><i class="bi bi-upload"></i> Upload Partition Binary</span>
+                                    </label>
+                                    <input type="file" id="partitionFile" accept=".bin">
+                                    <p id="partitionFileInfo" class="file-info">No file selected</p>
+                                </div>
                             </div>
                         </div>
                     </div>

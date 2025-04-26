@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return element;
         }
 
+        // --- Const Declarations ---
         const stepContainers = document.querySelectorAll('.step-container');
         const stepCircles = document.querySelectorAll('.stepper-circle');
         const nextToStep2Button = getElementById('nextToStep2');
@@ -78,27 +79,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const appFileInfoElem = getElementById('appFileInfo');
         const bootloaderFileInfoElem = getElementById('bootloaderFileInfo');
         const partitionFileInfoElem = getElementById('partitionFileInfo');
-        if (appFileInfoElem) appFileInfoElem.textContent = 'No file selected';
-        if (bootloaderFileInfoElem) bootloaderFileInfoElem.textContent = 'No file selected';
-        if (partitionFileInfoElem) partitionFileInfoElem.textContent = 'No file selected';
         const appAddressInput = getElementById('appAddress');
         const bootloaderAddressInput = getElementById('bootloaderAddress');
         const partitionAddressInput = getElementById('partitionAddress');
         const showMoreDevicesButton = getElementById('showMoreDevicesButton');
         const showLessDevicesButton = getElementById('showLessDevicesButton');
         const rareDevicesContainer = getElementById('rareDevicesContainer');
-        const firmwareSourceSelect = getElementById('firmwareSourceSelect');
+        // const firmwareSourceSelect = getElementById('firmwareSourceSelect'); // No longer used directly
         const ghostEspDownloadSection = getElementById('ghostEspDownloadSection');
         const marauderDownloadSection = getElementById('marauderDownloadSection');
         const manualUploadSection = getElementById('manualUploadSection');
         const ghostEspVariantSelect = getElementById('ghostEspVariantSelect');
-        const ghostEspDownloadLink = getElementById('ghostEspDownloadLink');
         const marauderVariantSelect = getElementById('marauderVariantSelect');
         const marauderDownloadLink = getElementById('marauderDownloadLink');
-
-        // Add reference to the new toggle
         const disableFilterToggle = getElementById('disableFilterToggle');
+        const choiceDownloadCard = getElementById('choiceDownload');
+        const choiceManualCard = getElementById('choiceManual');
+        const downloadOptionsContainer = getElementById('downloadOptionsContainer');
+        const manualUploadContainer = getElementById('manualUploadContainer');
+        const downloadSourceSelect = getElementById('downloadSourceSelect');
+        const ghostEspStatusElem = getElementById('ghostEspStatus');
 
+        // --- Let Declarations (Moved Up) ---
         let espLoader = null;
         let transport = null;
         let connected = false;
@@ -106,7 +108,15 @@ document.addEventListener('DOMContentLoaded', () => {
         let selectedDevice = null;
         let selectedSide = '';
         let currentStep = 1;
+        let extractedGhostEspFiles = null;
+        let selectedFirmwareMethod = null; // To track 'download' or 'manual'
 
+        // --- Initial UI State ---
+        if (appFileInfoElem) appFileInfoElem.textContent = 'No file selected';
+        if (bootloaderFileInfoElem) bootloaderFileInfoElem.textContent = 'No file selected';
+        if (partitionFileInfoElem) partitionFileInfoElem.textContent = 'No file selected';
+
+        // --- Terminal Object ---
         let espLoaderTerminal = {
             clean() {
                 if (terminalElem) terminalElem.innerHTML = '';
@@ -116,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     terminalElem.innerHTML += data + '\n';
                     terminalElem.scrollTop = terminalElem.scrollHeight;
                 }
-                updateStatusIndicator('flashing', 'Processing', data);
+                // updateStatusIndicator('flashing', 'Processing', data); // Maybe too noisy?
                 console.log(data);
             },
             write(data) {
@@ -128,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        // --- Device Options Const ---
         const deviceOptions = {
             'ESP32': {
                 filters: [
@@ -282,6 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        // --- Event Listeners ---
         nextToStep2Button.addEventListener('click', () => {
             if (selectedDevice) {
                 goToStep(2);
@@ -306,6 +318,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         backToStep3Button.addEventListener('click', () => goToStep(3));
         startOverButton.addEventListener('click', () => {
+            clearExtractedData(); // Clear loaded ZIP data
+            clearManualInputs(); // Also clear manual inputs
             if (connected) {
                 disconnect().then(() => goToStep(1));
             } else {
@@ -497,42 +511,81 @@ document.addEventListener('DOMContentLoaded', () => {
             const addSummaryItem = (icon, text) => {
                 flashSummaryElem.innerHTML += `<div class="summary-item"><i class="bi ${icon} me-2"></i> ${text}</div>`;
             };
-            if (appFileInput && appFileInput.files && appFileInput.files.length > 0) {
-                const file = appFileInput.files[0];
-                const address = appAddressInput.value;
-                addSummaryItem('bi-file-earmark-binary', `Application: ${file.name} at ${address}`);
-                hasBinaries = true;
-            }
-            if (bootloaderFileInput && bootloaderFileInput.files && bootloaderFileInput.files.length > 0) {
-                const file = bootloaderFileInput.files[0];
-                const address = bootloaderAddressInput.value;
-                addSummaryItem('bi-hdd-network', `Bootloader: ${file.name} at ${address}`);
-                hasBinaries = true;
-            }
-            if (partitionFileInput && partitionFileInput.files && partitionFileInput.files.length > 0) {
-                const file = partitionFileInput.files[0];
-                const address = partitionAddressInput.value;
-                addSummaryItem('bi-table', `Partition Table: ${file.name} at ${address}`);
-                hasBinaries = true;
-            }
+
+            // --- FIX: Use selectedFirmwareMethod instead of firmwareSourceSelect.value ---
+            // const source = firmwareSourceSelect.value; // REMOVE THIS
+
+            // Check based on the *selected method*
+            if (selectedFirmwareMethod === 'download' && extractedGhostEspFiles) {
+                // Use extracted GhostESP data 
+                 if (extractedGhostEspFiles.app.data) {
+                     const address = extractedGhostEspFiles.app.addressInput.value;
+                     addSummaryItem('bi-file-earmark-binary', `Application: ${extractedGhostEspFiles.app.name} at ${address} [Auto]`);
+                     hasBinaries = true;
+                 }
+                 if (extractedGhostEspFiles.bootloader.data) {
+                     const address = extractedGhostEspFiles.bootloader.addressInput.value;
+                     addSummaryItem('bi-hdd-network', `Bootloader: ${extractedGhostEspFiles.bootloader.name} at ${address} [Auto]`);
+                     hasBinaries = true;
+                 }
+                 if (extractedGhostEspFiles.partition.data) {
+                     const address = extractedGhostEspFiles.partition.addressInput.value;
+                     addSummaryItem('bi-table', `Partition Table: ${extractedGhostEspFiles.partition.name} at ${address} [Auto]`);
+                     hasBinaries = true;
+                 }
+            } else if (selectedFirmwareMethod === 'manual') {
+                // Use manual inputs 
+                 if (appFileInput?.files?.length > 0) {
+                    const file = appFileInput.files[0];
+                    const address = appAddressInput.value;
+                    addSummaryItem('bi-file-earmark-binary', `Application: ${file.name} at ${address}`);
+                    hasBinaries = true;
+                 }
+                 if (bootloaderFileInput?.files?.length > 0) {
+                    const file = bootloaderFileInput.files[0];
+                    const address = bootloaderAddressInput.value;
+                    addSummaryItem('bi-hdd-network', `Bootloader: ${file.name} at ${address}`);
+                    hasBinaries = true;
+                 }
+                 if (partitionFileInput?.files?.length > 0) {
+                    const file = partitionFileInput.files[0];
+                    const address = partitionAddressInput.value;
+                    addSummaryItem('bi-table', `Partition Table: ${file.name} at ${address}`);
+                    hasBinaries = true;
+                 }
+            } // else: No method selected or no files yet
+
+            // --- The rest of the function is fine ---
             if (!hasBinaries) {
-                flashSummaryElem.innerHTML = '<div class="summary-item text-warning"><i class="bi bi-exclamation-triangle me-2"></i> No firmware files selected</div>';
-                flashButton.disabled = true;
+                flashSummaryElem.innerHTML = '<div class="summary-item text-warning"><i class="bi bi-exclamation-triangle me-2"></i> Select method and provide firmware</div>';
+                if (flashButton) flashButton.disabled = true; 
             } else {
-                flashButton.disabled = false;
+                 if (flashButton) flashButton.disabled = !connected; 
             }
             addSummaryItem('bi-gear', `Settings: ${flashModeSelect.value.toUpperCase()}, ${flashFreqSelect.value}, ${flashSizeSelect.value}`);
             if (eraseAllCheckbox.checked) {
                 addSummaryItem('bi-eraser-fill text-warning', '<strong>Erase all flash before programming</strong>');
             }
+             updateButtonStates(); 
         }
 
         function hasFirmwareFilesSelected() {
-            return (appFileInput && appFileInput.files && appFileInput.files.length > 0) ||
-                (bootloaderFileInput && bootloaderFileInput.files && bootloaderFileInput.files.length > 0) ||
-                (partitionFileInput && partitionFileInput.files && partitionFileInput.files.length > 0);
-        }
+            // --- FIX: Use selectedFirmwareMethod instead of firmwareSourceSelect.value ---
+             // const source = firmwareSourceSelect.value; // REMOVE THIS
 
+             // Check based on the *selected method*
+             if (selectedFirmwareMethod === 'download') {
+                 // If download was chosen, check if Ghost files were extracted
+                 return extractedGhostEspFiles && (extractedGhostEspFiles.app.data || extractedGhostEspFiles.bootloader.data || extractedGhostEspFiles.partition.data);
+             } else if (selectedFirmwareMethod === 'manual') {
+                 // Original check for manual files
+                 return (appFileInput?.files?.length > 0) ||
+                        (bootloaderFileInput?.files?.length > 0) ||
+                        (partitionFileInput?.files?.length > 0);
+             }
+             return false; // No method selected yet
+        }
+        
         async function connect() {
             if (!selectedDevice) {
                 espLoaderTerminal.writeLine("Please select a device type first");
@@ -674,7 +727,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (!hasFirmwareFilesSelected()) {
-                espLoaderTerminal.writeLine("Please select at least one firmware file");
+                espLoaderTerminal.writeLine("Please select/load at least one firmware file");
                 return;
             }
 
@@ -686,9 +739,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const savedSide = selectedSide;
             const savedBaudrate = baudrateSelect.value;
             const savedResetMethod = resetMethodSelect.value;
-
-            // Store files info for validation after reconnect
-            window.filesToValidate = [];
 
             // Disable buttons during flash
             flashButton.disabled = true;
@@ -730,60 +780,103 @@ document.addEventListener('DOMContentLoaded', () => {
                 espLoaderTerminal.writeLine("Processing firmware files...");
                 updateStatusIndicator('flashing', 'Processing files...', '');
 
-
-                // Collect all firmware files and addresses
                 const fileArray = [];
+                const source = selectedFirmwareMethod === 'download' ? 'ghostesp' : 'manual';
 
-                // Process each file input
+                // --- Use extracted GhostESP data if available ---
+                if (source === 'ghostesp' && extractedGhostEspFiles) {
+                    espLoaderTerminal.writeLine("Using auto-loaded GhostESP files...");
+                    for (const key in extractedGhostEspFiles) {
+                        const fileInfo = extractedGhostEspFiles[key];
+                        if (fileInfo.data) {
+                            const flashAddress = parseInt(fileInfo.addressInput.value, 16);
+                            // Convert ArrayBuffer to the binary string esptool.js expects
+                            const uint8Data = new Uint8Array(fileInfo.data);
+                            let binaryString = '';
+                            for (let i = 0; i < uint8Data.length; i++) {
+                                binaryString += String.fromCharCode(uint8Data[i]);
+                            }
+                            
+                            fileArray.push({
+                                data: binaryString,
+                                address: flashAddress,
+                                name: fileInfo.name, // Store name for progress reporting
+                                type: fileInfo.type // Store type for offset check
+                            });
+                             espLoaderTerminal.writeLine(`Prepared ${fileInfo.name} for address 0x${flashAddress.toString(16)}`);
+                        }
+                    }
+                }
+                // --- Fallback to manual file inputs ---
+                else {
+                    espLoaderTerminal.writeLine("Using manually selected files...");
                 for (const [inputElem, addressInput, fileType] of [
                     [appFileInput, appAddressInput, 'Application'],
                     [bootloaderFileInput, bootloaderAddressInput, 'Bootloader'],
                     [partitionFileInput, partitionAddressInput, 'Partition']
                 ]) {
-                    if (inputElem && inputElem.files && inputElem.files.length > 0) {
+                        if (inputElem?.files?.length > 0) {
                         const file = inputElem.files[0];
                         const firmware = await file.arrayBuffer();
                         const flashAddress = parseInt(addressInput.value, 16);
 
+                            // Convert ArrayBuffer to binary string
                         const uint8Data = new Uint8Array(firmware);
                         let binaryString = '';
                         for (let i = 0; i < uint8Data.length; i++) {
                             binaryString += String.fromCharCode(uint8Data[i]);
                         }
 
-                        const fileInfo = {
+                            fileArray.push({
                             data: binaryString,
                             address: flashAddress,
                             name: file.name,
                             type: fileType,
-                            size: uint8Data.length
-                        };
-
-                        fileArray.push(fileInfo);
-                        window.filesToValidate.push(fileInfo);
+                                size: uint8Data.length // Keep size if needed elsewhere?
+                            });
+                             espLoaderTerminal.writeLine(`Prepared ${file.name} for address 0x${flashAddress.toString(16)}`);
+                        }
                     }
+                }
+
+                if (fileArray.length === 0) {
+                     espLoaderTerminal.writeLine("❌ No firmware data found to flash.");
+                     updateButtonStates();
+                     return; 
                 }
 
                 fileArray.sort((a, b) => a.address - b.address);
 
-                // Inside flash function
+                // --- Bootloader Offset Check (existing logic is fine) ---
                 chipType = espLoader.chip.CHIP_NAME;
-                let correctBootloaderOffset = 0x1000;
+                 let correctBootloaderOffset = 0x1000; // Default for ESP32
 
+                 // Determine correct offset based on chip type (add ESP32-C2 etc. if needed)
                 if (chipType.includes("ESP32-S3") ||
                     chipType.includes("ESP32-C3") ||
-                    chipType.includes("ESP32-C6")) {
+                     chipType.includes("ESP32-C6") || 
+                     chipType.includes("ESP32-H2") || 
+                     chipType.includes("ESP32-C2")) { // Assuming C2/H2 also use 0x0
                     correctBootloaderOffset = 0x0;
-                    espLoaderTerminal.writeLine(`Adjusted bootloader offset to 0x0 for ${chipType}`);
+                 } else if (chipType.includes("ESP32-P4") || chipType.includes("ESP32-C5")) { // User provided 0x2000
+                      correctBootloaderOffset = 0x2000;
                 }
 
+                 // Apply correction if necessary
+                 let offsetAdjusted = false;
                 for (let i = 0; i < fileArray.length; i++) {
                     if (fileArray[i].type === 'Bootloader' &&
                         fileArray[i].address !== correctBootloaderOffset) {
-                        espLoaderTerminal.writeLine(`WARNING: Bootloader address doesn't match chip type! Adjusting from ${fileArray[i].address.toString(16)} to ${correctBootloaderOffset.toString(16)}`);
+                         espLoaderTerminal.writeLine(`⚠️ WARNING: Bootloader address 0x${fileArray[i].address.toString(16)} does not match expected offset 0x${correctBootloaderOffset.toString(16)} for ${chipType}. Adjusting.`);
                         fileArray[i].address = correctBootloaderOffset;
+                         offsetAdjusted = true;
                     }
                 }
+                 if (offsetAdjusted) {
+                     // Re-sort if addresses changed
+                     fileArray.sort((a, b) => a.address - b.address);
+                     espLoaderTerminal.writeLine("Re-sorted files after bootloader address correction.");
+                 }
 
                 chipInfoElem.innerHTML = `<span class="status-indicator status-flashing"></span> Flashing...`;
                 updateStatusIndicator('flashing', 'Flashing firmware...', 'Do not disconnect');
@@ -805,7 +898,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     reportProgress: (fileIndex, written, total) => {
                         const percentage = Math.floor((written / total) * 100);
                         flashProgressElem.style.width = `${percentage}%`;
-                        const fileName = fileArray[fileIndex] ? fileArray[fileIndex].name : 'unknown';
+                        // Use the name stored in our fileArray object
+                        const fileName = fileArray[fileIndex] ? fileArray[fileIndex].name : `File ${fileIndex + 1}`; 
                         espLoaderTerminal.writeLine(`Flashing ${fileName}: ${percentage}% (${written}/${total} bytes)`);
 
                         // Calculate and display ETA
@@ -1061,17 +1155,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (connectButton) connectButton.disabled = connected;
             if (disconnectButton) disconnectButton.disabled = !connected;
             
-            // Action buttons
-            if (flashButton) flashButton.disabled = !connected || !hasFirmwareFilesSelected();
+            // Action buttons depend on method and files/connection
+            // Call hasFirmwareFilesSelected safely here
+            const canFlash = connected && hasFirmwareFilesSelected(); 
+            if (flashButton) flashButton.disabled = !canFlash;
             if (eraseButton) eraseButton.disabled = !connected;
             if (resetButton) resetButton.disabled = !connected;
             
             // Connection settings
             if (baudrateSelect) baudrateSelect.disabled = connected;
-            if (resetMethodSelect) resetMethodSelect.disabled = connected;
+            // if (resetMethodSelect) resetMethodSelect.disabled = connected;
 
-            // Disable next step if not connected
+            // Disable next step buttons based on state
             if (nextToStep3Button) nextToStep3Button.disabled = !connected;
+            // Call hasFirmwareFilesSelected safely here
+            if (nextToStep4Button) nextToStep4Button.disabled = !hasFirmwareFilesSelected(); 
         }
         
         // Check if WebSerial is supported
@@ -1214,6 +1312,40 @@ document.addEventListener('DOMContentLoaded', () => {
             "Crowtech_LCD.zip": "esp32s3"
         };
 
+        // --- Helper function to populate assets into a parent element ---
+        function populateAssets(assets, parentElement, fileExtension, filterChip, repo) {
+            let foundFiles = false;
+            if (!assets || assets.length === 0) {
+                 return false; // No assets to process
+            }
+
+            assets.forEach(asset => {
+                if (asset.name.endsWith(fileExtension)) {
+                    // --- Filtering Logic for GhostESP ---
+                    if (repo === 'Ghost_ESP' && filterChip) {
+                        const assetTarget = ghostEspZipToTarget[asset.name];
+                        const mappedChip = ghostEspChipMapping[assetTarget];
+                        if (mappedChip !== filterChip) {
+                            return; // Skip this asset if it doesn't match the selected chip
+                        }
+                    }
+                    // --- End Filtering Logic ---
+
+                    foundFiles = true;
+                    const option = document.createElement('option');
+                    option.value = asset.browser_download_url;
+
+                    // Use nice name if available for GhostESP, otherwise use asset name
+                    option.textContent = (repo === 'Ghost_ESP' && ghostEspNiceNames[asset.name])
+                                         ? ghostEspNiceNames[asset.name]
+                                         : asset.name;
+
+                    parentElement.appendChild(option);
+                }
+            });
+            return foundFiles;
+        }
+
         async function populateRepoOptions(owner, repo, selectElementId, fileExtension = '.zip', defaultOptionText = '-- Select an option --', filterChip = null) {
             const selectElement = getElementById(selectElementId);
             if (!selectElement) {
@@ -1225,52 +1357,73 @@ document.addEventListener('DOMContentLoaded', () => {
             selectElement.disabled = true;
 
             try {
-                const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
+                const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases`; // Fetch all releases
+                espLoaderTerminal.writeLine(`Fetching releases from ${owner}/${repo}...`);
                 const response = await fetch(apiUrl);
                 if (!response.ok) {
                     throw new Error(`GitHub API Error: ${response.status} ${response.statusText}`);
                 }
-                const data = await response.json();
-                if (!data.assets || data.assets.length === 0) {
-                    espLoaderTerminal.writeLine(`⚠️ No assets found in the latest ${repo} release.`);
-                    selectElement.innerHTML = `<option value="">No assets found</option>`;
+                const releases = await response.json();
+                if (!releases || releases.length === 0) {
+                    espLoaderTerminal.writeLine(`⚠️ No releases found for ${owner}/${repo}.`);
+                    selectElement.innerHTML = `<option value="">No releases found</option>`;
                     return;
                 }
 
-                let foundFiles = false;
-                data.assets.forEach(asset => {
-                    if (asset.name.endsWith(fileExtension)) {
-                        // --- Filtering Logic for GhostESP ---
-                        if (repo === 'Ghost_ESP' && filterChip) {
-                            const assetTarget = ghostEspZipToTarget[asset.name];
-                            const mappedChip = ghostEspChipMapping[assetTarget];
-                            if (mappedChip !== filterChip) {
-                                return; // Skip this asset if it doesn't match the selected chip
-                            }
-                        }
-                        // --- End Filtering Logic ---
-
-                        foundFiles = true;
-                        const option = document.createElement('option');
-                        option.value = asset.browser_download_url;
-
-                        // Use nice name if available for GhostESP, otherwise use asset name
-                        option.textContent = (repo === 'Ghost_ESP' && ghostEspNiceNames[asset.name]) 
-                                             ? ghostEspNiceNames[asset.name] 
-                                             : asset.name;
-
-                        selectElement.appendChild(option);
+                // Find the latest stable and pre-release
+                let latestStableRelease = null;
+                let latestPrerelease = null;
+                for (const release of releases) {
+                    if (!release.prerelease && !latestStableRelease) {
+                        latestStableRelease = release;
                     }
-                });
+                    if (release.prerelease && !latestPrerelease) {
+                        latestPrerelease = release;
+                    }
+                     // Optimization: stop if we found both
+                     if (latestStableRelease && latestPrerelease) break; 
+                }
 
-                if (!foundFiles) {
-                    let message = `No ${fileExtension} assets found`;
+                let optionsAdded = false;
+
+                // Populate Stable Release
+                if (latestStableRelease) {
+                    const stableOptgroup = document.createElement('optgroup');
+                    stableOptgroup.label = `Stable Release (${latestStableRelease.tag_name})`;
+                    if (populateAssets(latestStableRelease.assets, stableOptgroup, fileExtension, filterChip, repo)) {
+                        selectElement.appendChild(stableOptgroup);
+                        optionsAdded = true;
+                         espLoaderTerminal.writeLine(`Found stable release: ${latestStableRelease.tag_name}`);
+                    } else {
+                         espLoaderTerminal.writeLine(`Stable release ${latestStableRelease.tag_name} found, but no matching assets.`);
+                    }
+                } else {
+                    espLoaderTerminal.writeLine(`No stable release found for ${owner}/${repo}.`);
+                }
+
+                // Populate Pre-release
+                if (latestPrerelease) {
+                    const prereleaseOptgroup = document.createElement('optgroup');
+                    prereleaseOptgroup.label = `Pre-release (${latestPrerelease.tag_name})`;
+                     if (populateAssets(latestPrerelease.assets, prereleaseOptgroup, fileExtension, filterChip, repo)) {
+                        selectElement.appendChild(prereleaseOptgroup);
+                        optionsAdded = true;
+                        espLoaderTerminal.writeLine(`Found pre-release: ${latestPrerelease.tag_name}`);
+                     } else {
+                         espLoaderTerminal.writeLine(`Pre-release ${latestPrerelease.tag_name} found, but no matching assets.`);
+                     }
+                } else {
+                    espLoaderTerminal.writeLine(`No pre-release found for ${owner}/${repo}.`);
+                }
+
+                if (!optionsAdded) {
+                    let message = `No suitable ${fileExtension} assets found`;
                     if (repo === 'Ghost_ESP' && filterChip) {
                         message += ` for the selected chip (${filterChip})`;
                     }
-                     message += ` in the latest ${repo} release.`;
+                     message += ` in the latest stable or pre-releases for ${owner}/${repo}.`;
                      espLoaderTerminal.writeLine(`⚠️ ${message}`);
-                     selectElement.innerHTML = `<option value="">${message}</option>`;
+                     selectElement.innerHTML = `<option value="">${message}</option>`; // Keep disabled
                 } else {
                      selectElement.disabled = false;
                 }
@@ -1278,15 +1431,599 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                  console.error(`Error fetching ${repo} data:`, error);
                  espLoaderTerminal.writeLine(`⚠️ Failed to fetch ${repo} list: ${error.message}`);
-                 selectElement.innerHTML = `<option value="">Error loading variants</option>`;
+                 selectElement.innerHTML = `<option value="">Error loading options</option>`;
             }
         }
 
+        // --- NEW FUNCTION: Load and process GhostESP ZIP ---
+        async function loadGhostEspZip(zipUrl) {
+            console.log(`[Debug] loadGhostEspZip called with original URL: ${zipUrl}`); // Log original URL
+            if (!zipUrl) {
+                console.log('[Debug] loadGhostEspZip: No URL provided, clearing data.'); 
+                extractedGhostEspFiles = null; 
+                updateBinaryTypeIndicators(); 
+                updateFlashSummary(); 
+                updateButtonStates();
+                return;
+            }
+
+            // --- Use YOUR Cloudflare Worker Proxy ---
+            // const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(zipUrl)}`; // OLD
+            const proxyUrl = `https://fragrant-flower-ba0b.creepersbeast.workers.dev/?url=${encodeURIComponent(zipUrl)}`; // UPDATED with your worker URL
+            console.log(`[Debug] Using CF Worker proxy URL: ${proxyUrl}`); // Log proxy URL
+            espLoaderTerminal.writeLine(`Fetching GhostESP firmware via proxy from ${zipUrl}...`);
+            
+            if (ghostEspVariantSelect) ghostEspVariantSelect.disabled = true; 
+
+            extractedGhostEspFiles = null; 
+
+            try {
+                console.log('[Debug] loadGhostEspZip: Starting fetch via proxy...'); 
+                // --- Fetch using the proxy URL ---
+                const response = await fetch(proxyUrl); 
+                console.log(`[Debug] loadGhostEspZip: Fetch response status: ${response.status}, ok: ${response.ok}`); 
+                
+                // Check if the proxy itself had an issue or if the proxied request failed
+                if (!response.ok) {
+                    // Try to get error details from the proxy response if available
+                    let proxyErrorDetails = `Proxy fetch failed with status: ${response.status}`;
+                    try {
+                        const errorText = await response.text();
+                         // AllOrigins might return JSON with error details
+                         try {
+                             const errorJson = JSON.parse(errorText);
+                             if (errorJson.contents && errorJson.status?.http_code) {
+                                 proxyErrorDetails = `Proxied request failed: ${errorJson.status.http_code}. ${errorJson.contents}`;
+                             } else {
+                                 proxyErrorDetails += `. Response: ${errorText.substring(0, 200)}`; // Limit length
+                             }
+                         } catch (parseError) {
+                              proxyErrorDetails += `. Response: ${errorText.substring(0, 200)}`; // Limit length
+                         }
+                    } catch (e) { /* Ignore errors reading body */ }
+                     console.error(`[Debug] Proxy fetch error: ${proxyErrorDetails}`);
+                     throw new Error(proxyErrorDetails); 
+                }
+                
+                const zipBlob = await response.blob();
+                console.log(`[Debug] loadGhostEspZip: Downloaded Blob size: ${zipBlob.size}`); 
+                if (zipBlob.size === 0) {
+                    throw new Error("Downloaded ZIP file is empty. Proxy or original link might be broken.");
+                }
+                 // Check Blob type - should be application/zip or octet-stream generally
+                 console.log(`[Debug] loadGhostEspZip: Downloaded Blob type: ${zipBlob.type}`);
+                 if (zipBlob.type && !zipBlob.type.includes('zip') && !zipBlob.type.includes('octet-stream') && !zipBlob.type.includes('binary')) {
+                     // Suspicious type, might be an error page from the proxy or GitHub
+                     try {
+                         const errorText = await zipBlob.text();
+                         console.warn(`[Debug] Suspicious blob type. Content preview: ${errorText.substring(0, 200)}`);
+                         // You might want to throw a more specific error here depending on content
+                     } catch (e) { /* Ignore */}
+                 }
+
+                espLoaderTerminal.writeLine(`Downloaded ${Math.round(zipBlob.size / 1024)} KB ZIP. Extracting...`);
+
+                console.log('[Debug] loadGhostEspZip: Loading ZIP with JSZip...'); 
+                const zip = await JSZip.loadAsync(zipBlob);
+                console.log('[Debug] loadGhostEspZip: JSZip loaded successfully.'); 
+                
+                // --- Files to extract ---
+                const filesToExtract = {
+                    app: { name: 'Ghost_ESP_IDF.bin', data: null, elem: appFileInfoElem, addressInput: appAddressInput, type: 'Application' }, // Corrected name
+                    bootloader: { name: 'bootloader.bin', data: null, elem: bootloaderFileInfoElem, addressInput: bootloaderAddressInput, type: 'Bootloader' }, // Seems correct
+                    partition: { name: 'partition-table.bin', data: null, elem: partitionFileInfoElem, addressInput: partitionAddressInput, type: 'Partition' } // Corrected name
+                };
+
+                let foundCount = 0;
+                console.log('[Debug] loadGhostEspZip: Starting file extraction loop...'); 
+                for (const key in filesToExtract) {
+                    const target = filesToExtract[key];
+                    console.log(`[Debug] loadGhostEspZip: Checking for file: ${target.name}`);
+                    
+                    // Try the primary name first
+                    let fileEntry = zip.file(target.name);
+                    
+                    // If not found, try alternative names for specific file types
+                    if (!fileEntry) {
+                        if (key === 'app') {
+                            fileEntry = zip.file('firmware.bin');
+                            if (fileEntry) target.name = 'firmware.bin';
+                        } else if (key === 'partition') {
+                            fileEntry = zip.file('partitions.bin');
+                            if (fileEntry) target.name = 'partitions.bin';
+                        }
+                    }
+                    
+                    if (fileEntry) {
+                        console.log(`[Debug] loadGhostEspZip: Found ${target.name}, extracting data...`);
+                        target.data = await fileEntry.async("arraybuffer");
+                        const fileSizeKB = Math.round(target.data.byteLength / 1024);
+                         console.log(`[Debug] loadGhostEspZip: Extracted ${target.name}, size: ${fileSizeKB} KB. Updating UI...`); 
+                        if (target.elem) {
+                             target.elem.textContent = `${target.name} (${fileSizeKB} KB) [Auto-Loaded]`;
+                             const dropZone = target.elem.closest('.firmware-section')?.querySelector('.custom-file-upload');
+                             dropZone?.classList.add('file-uploaded'); 
+                        }
+                        espLoaderTerminal.writeLine(`Found ${target.name} (${fileSizeKB} KB)`);
+                        foundCount++;
+                    } else {
+                         console.log(`[Debug] loadGhostEspZip: File not found in ZIP: ${target.name}`); 
+                         if (target.elem) {
+                            target.elem.textContent = 'Not found in ZIP';
+                             const dropZone = target.elem.closest('.firmware-section')?.querySelector('.custom-file-upload');
+                             dropZone?.classList.remove('file-uploaded'); // Remove uploaded class if file not found
+                         }
+                         espLoaderTerminal.writeLine(`Warning: ${target.name} not found in the ZIP.`);
+                    }
+                }
+                console.log(`[Debug] loadGhostEspZip: Extraction loop finished. Found count: ${foundCount}`); 
+
+                if (foundCount > 0) {
+                     extractedGhostEspFiles = filesToExtract; 
+                     espLoaderTerminal.writeLine("Extraction complete. Files ready.");
+                     updateBinaryTypeIndicators(); 
+                     updateFlashSummary(); 
+                } else {
+                    // If we downloaded something but didn't find the files, clear UI state
+                     clearExtractedData(); 
+                     updateFlashSummary();
+                    throw new Error("No required .bin files found in the downloaded ZIP.");
+                }
+
+            } catch (error) {
+                console.error("[Debug] Error loading or extracting GhostESP ZIP:", error); 
+                espLoaderTerminal.writeLine(`❌ Error processing GhostESP ZIP: ${error.message}`);
+                extractedGhostEspFiles = null; 
+                 if (appFileInfoElem) appFileInfoElem.textContent = 'ZIP Load Failed';
+                 if (bootloaderFileInfoElem) bootloaderFileInfoElem.textContent = 'ZIP Load Failed';
+                 if (partitionFileInfoElem) partitionFileInfoElem.textContent = 'ZIP Load Failed';
+                 document.querySelectorAll('.custom-file-upload.file-uploaded').forEach(el => el.classList.remove('file-uploaded'));
+                 updateBinaryTypeIndicators(); // Clear badges on error
+            } finally {
+                console.log('[Debug] loadGhostEspZip: Finally block reached. Re-enabling select.'); 
+                 if (ghostEspVariantSelect) ghostEspVariantSelect.disabled = false; 
+                updateButtonStates(); 
+            }
+        }
+
+        // --- Modify setupDownloadLinkListener to handle the GhostESP case ---
         function setupDownloadLinkListener(selectElement, linkElement) {
             if (selectElement && linkElement) {
                 selectElement.addEventListener('change', () => {
-                    if (selectElement.value) {
-                        linkElement.href = selectElement.value;
+                    const selectedValue = selectElement.value;
+                    console.log(`[Debug] Select changed for ID: ${selectElement.id}, Value: ${selectedValue}`); // <<< ADD LOG
+
+                    // --- GhostESP Special Handling ---
+                    if (selectElement.id === 'ghostEspVariantSelect') {
+                        console.log('[Debug] GhostESP variant selected, attempting load...'); // <<< ADD LOG
+                        linkElement.href = '#'; // Keep link disabled for GhostESP
+                        linkElement.classList.add('disabled');
+                        linkElement.classList.replace('btn-primary', 'btn-secondary');
+                        
+                        // Trigger the load function
+                        loadGhostEspZip(selectedValue); 
+                    
+                    // --- Default Handling (Marauder, etc.) ---
+                    } else {
+                        console.log('[Debug] Non-GhostESP select changed.'); // <<< ADD LOG
+                        if (selectedValue) {
+                            linkElement.href = selectedValue;
+                        linkElement.classList.remove('disabled');
+                        linkElement.classList.replace('btn-secondary', 'btn-primary');
+                    } else {
+                        linkElement.href = '#';
+                        linkElement.classList.add('disabled');
+                        linkElement.classList.replace('btn-primary', 'btn-secondary');
+                        }
+                    }
+                });
+            } else {
+                 console.error(`[Debug] setupDownloadLinkListener: Missing selectElement or linkElement for ID: ${selectElement?.id}`); // <<< ADD ERROR LOG
+            }
+        }
+
+        // --- Remove the early call for GhostESP ---
+        // setupDownloadLinkListener(ghostEspVariantSelect, ghostEspDownloadLink); 
+        
+        // Keep the early call for Marauder as its section might be simpler
+        setupDownloadLinkListener(marauderVariantSelect, marauderDownloadLink); 
+
+        // --- THIS BLOCK IS THE CULPRIT - Commenting it out ---
+        /*
+        if (firmwareSourceSelect) { 
+            firmwareSourceSelect.addEventListener('change', () => { 
+                const selectedSource = firmwareSourceSelect.value;
+                console.log(`[Debug] Firmware source changed to: ${selectedSource}`); // <<< ADD LOG
+
+                // Reset file inputs AND extracted data if switching away from manual/ghost
+                 if (selectedSource !== 'manual') {
+                     clearManualInputs(); // Use a helper for clarity
+                 }
+                 if (selectedSource !== 'ghostesp') {
+                     clearExtractedData(); // Clear extracted data if switching away from ghost
+                 }
+
+
+                const allDownloadSections = [ghostEspDownloadSection, marauderDownloadSection];
+                // Remove download links logic as GhostESP doesn't use it now
+                // const allDownloadLinks = [ghostEspDownloadLink, marauderDownloadLink]; 
+
+                manualUploadSection.classList.add('d-none');
+                allDownloadSections.forEach(section => section?.classList.add('d-none'));
+                // Clear link states (only marauder needs it now)
+                 if (marauderDownloadLink) {
+                     marauderDownloadLink.href = '#';
+                     marauderDownloadLink.classList.add('disabled');
+                     marauderDownloadLink.classList.replace('btn-primary', 'btn-secondary');
+                 }
+
+
+                if (selectedSource === 'manual') {
+                     console.log('[Debug] Source is manual, showing manual section.'); // <<< ADD LOG
+                    manualUploadSection.classList.remove('d-none');
+                } else if (selectedSource === 'ghostesp') {
+                     console.log('[Debug] Source is ghostesp, showing section and populating options...'); // <<< ADD LOG
+                    ghostEspDownloadSection?.classList.remove('d-none');
+                    populateRepoOptions('Spooks4576', 'Ghost_ESP', 'ghostEspVariantSelect', '.zip', '-- Select a GhostESP ZIP... --', selectedDevice)
+                        .then(() => {
+                            // --- Move GhostESP Listener Setup Here ---
+                            console.log('[Debug] Populated GhostESP options, now setting up listener.'); // <<< ADD LOG
+                            setupDownloadLinkListener(ghostEspVariantSelect, ghostEspDownloadLink); 
+                            // Note: GhostESP download link is now unused / kept disabled by setupDownloadLinkListener
+                        })
+                        .catch(err => {
+                            console.error('[Debug] Error during populateRepoOptions for GhostESP:', err); // <<< ADD LOG
+                        });
+                } else if (selectedSource === 'marauder') {
+                     console.log('[Debug] Source is marauder, showing section and populating options...'); // <<< ADD LOG
+                    marauderDownloadSection?.classList.remove('d-none');
+                    // Assuming Marauder doesn't need the listener moved, but could add .then() if needed
+                    populateRepoOptions('justcallmekoko', 'ESP32Marauder', 'marauderVariantSelect', '.bin', '-- Select a Marauder BIN... --');
+                }
+                
+                updateFlashSummary(); // Update summary after source change
+                updateButtonStates(); // Update buttons after source change
+            });
+
+            // Trigger change on load IF a device is already selected maybe?
+            // Or just let manual be default.
+             console.log('[Debug] Dispatching initial change event for firmwareSourceSelect'); // <<< ADD LOG
+            firmwareSourceSelect.dispatchEvent(new Event('change')); 
+        } 
+        */ // <<< --- End of commented out block ---
+
+        // --- Helper to clear manual file inputs ---
+        function clearManualInputs() {
+             if (appFileInput) appFileInput.value = '';
+             if (bootloaderFileInput) bootloaderFileInput.value = '';
+             if (partitionFileInput) partitionFileInput.value = '';
+             if(appFileInfoElem) appFileInfoElem.textContent = 'No file selected';
+             if(bootloaderFileInfoElem) bootloaderFileInfoElem.textContent = 'No file selected';
+             if(partitionFileInfoElem) partitionFileInfoElem.textContent = 'No file selected';
+             // Clear visual indicators too
+             document.querySelectorAll('.custom-file-upload.file-uploaded').forEach(el => el.classList.remove('file-uploaded'));
+             updateBinaryTypeIndicators();
+        }
+
+        // --- Helper to clear extracted data ---
+        function clearExtractedData() {
+            if (extractedGhostEspFiles) {
+                // Clear the stored data
+                extractedGhostEspFiles = null; 
+                // Optionally clear the UI text if it was set by extraction
+                // Check if the current text indicates it was auto-loaded before clearing
+                if (appFileInfoElem?.textContent.includes('[Auto-Loaded]')) appFileInfoElem.textContent = 'No file selected';
+                if (bootloaderFileInfoElem?.textContent.includes('[Auto-Loaded]')) bootloaderFileInfoElem.textContent = 'No file selected';
+                if (partitionFileInfoElem?.textContent.includes('[Auto-Loaded]')) partitionFileInfoElem.textContent = 'No file selected';
+                // Clear visual indicators 
+                document.querySelectorAll('.custom-file-upload.file-uploaded').forEach(el => el.classList.remove('file-uploaded'));
+                updateBinaryTypeIndicators(); 
+                espLoaderTerminal.writeLine("Cleared auto-loaded GhostESP files.");
+            }
+        }
+
+        // --- Modify updateBinaryTypeIndicators to check extracted data ---
+        function updateBinaryTypeIndicators() {
+            // Clear existing badges first
+            document.querySelectorAll('.file-badge').forEach(badge => badge.remove());
+            
+            // FIX: Use selectedFirmwareMethod instead of the removed firmwareSourceSelect
+            // const source = firmwareSourceSelect.value; 
+            const method = selectedFirmwareMethod; // Use the current method variable
+
+            let hasApp = false, hasBootloader = false, hasPartition = false;
+
+            // Check based on the selected method
+            if (method === 'download' && extractedGhostEspFiles) { 
+                hasApp = !!extractedGhostEspFiles.app.data;
+                hasBootloader = !!extractedGhostEspFiles.bootloader.data;
+                hasPartition = !!extractedGhostEspFiles.partition.data;
+            } else if (method === 'manual') { // Check the manual method
+                 hasApp = appFileInput?.files?.length > 0;
+                 hasBootloader = bootloaderFileInput?.files?.length > 0;
+                 hasPartition = partitionFileInput?.files?.length > 0;
+            }
+
+            if (hasApp) {
+                const appButton = document.querySelector('[data-binary="app"]');
+                appButton?.insertAdjacentHTML('beforeend', '<span class="file-badge"></span>');
+            }
+            if (hasBootloader) {
+                const bootloaderButton = document.querySelector('[data-binary="bootloader"]');
+                 bootloaderButton?.insertAdjacentHTML('beforeend', '<span class="file-badge"></span>');
+            }
+            if (hasPartition) {
+                const partitionButton = document.querySelector('[data-binary="partition"]');
+                 partitionButton?.insertAdjacentHTML('beforeend', '<span class="file-badge"></span>');
+            }
+        }
+
+        // --- NEW: Event Listeners for Primary Choice Cards ---
+        if (choiceDownloadCard) {
+            choiceDownloadCard.addEventListener('click', () => {
+                selectFirmwareMethod('download');
+            });
+        }
+        if (choiceManualCard) {
+            choiceManualCard.addEventListener('click', () => {
+                selectFirmwareMethod('manual');
+            });
+        }
+
+        function selectFirmwareMethod(method) {
+            selectedFirmwareMethod = method;
+
+            // Update card appearance
+            choiceDownloadCard?.classList.toggle('selected', method === 'download');
+            choiceManualCard?.classList.toggle('selected', method === 'manual');
+
+            // Show/hide relevant containers
+            downloadOptionsContainer?.classList.toggle('d-none', method !== 'download');
+            manualUploadContainer?.classList.toggle('d-none', method !== 'manual');
+            
+            // Reset state if switching
+            if (method === 'download') {
+                clearManualInputs(); 
+                // Reset download source dropdown if needed
+                 if (downloadSourceSelect) downloadSourceSelect.value = ''; 
+                 ghostEspDownloadSection?.classList.add('d-none');
+                 marauderDownloadSection?.classList.add('d-none');
+            } else { // method === 'manual'
+                clearExtractedData();
+                // Reset download source dropdown to avoid confusion
+                 if (downloadSourceSelect) downloadSourceSelect.value = ''; 
+                 ghostEspDownloadSection?.classList.add('d-none');
+                 marauderDownloadSection?.classList.add('d-none');
+                 // Maybe auto-select the 'app' toggle?
+                 document.querySelector('.binary-type-toggle .btn[data-binary="app"]')?.click();
+            }
+            
+            updateFlashSummary(); // Update summary based on new state
+            updateButtonStates(); // Update buttons
+        }
+
+        // --- NEW: Event Listener for Download Source Selection ---
+        if (downloadSourceSelect) {
+            downloadSourceSelect.addEventListener('change', () => {
+                const selectedSource = downloadSourceSelect.value;
+                console.log(`[Debug] Download source selected: ${selectedSource}`);
+
+                // Hide both subsections initially
+                ghostEspDownloadSection?.classList.add('d-none');
+                marauderDownloadSection?.classList.add('d-none');
+                 if (ghostEspStatusElem) { // Reset GhostESP status text
+                     ghostEspStatusElem.textContent = 'Select a variant to begin loading firmware files.';
+                     ghostEspStatusElem.className = 'form-text text-muted mt-2'; // Reset class
+                 }
+                 clearExtractedData(); // Clear any previously loaded Ghost files
+
+                if (selectedSource === 'ghostesp') {
+                    console.log('[Debug] Showing GhostESP section and populating options...');
+                    ghostEspDownloadSection?.classList.remove('d-none');
+                    populateRepoOptions('jaylikesbunda', 'Ghost_ESP', 'ghostEspVariantSelect', '.zip', '-- Select GhostESP Build --', selectedDevice)
+                        .then(() => {
+                            console.log('[Debug] Populated GhostESP options, setting up listener.');
+                            setupDownloadLinkListener(ghostEspVariantSelect, null); // Pass null instead of undefined ghostEspDownloadLink
+                        })
+                        .catch(err => {
+                            console.error('[Debug] Error populating GhostESP options:', err);
+                            if (ghostEspStatusElem) {
+                                ghostEspStatusElem.textContent = 'Error loading variants from GitHub.';
+                                ghostEspStatusElem.className = 'form-text text-danger mt-2 error';
+                             }
+                        });
+                } else if (selectedSource === 'marauder') {
+                    console.log('[Debug] Showing Marauder section and populating options...');
+                    marauderDownloadSection?.classList.remove('d-none');
+                    populateRepoOptions('justcallmekoko', 'ESP32Marauder', 'marauderVariantSelect', '.bin', '-- Select Marauder Binary --')
+                        .then(() => {
+                             console.log('[Debug] Populated Marauder options.');
+                             // Listener for Marauder download link is already attached (or should be)
+                             // setupDownloadLinkListener(marauderVariantSelect, marauderDownloadLink); // Already called earlier
+                        })
+                         .catch(err => {
+                             console.error('[Debug] Error populating Marauder options:', err);
+                             // Add error feedback for Marauder if needed
+                         });
+                }
+                updateFlashSummary(); // Update summary in case selection changes things
+                updateButtonStates();
+            });
+        }
+
+
+        // --- Modify loadGhostEspZip to update status element ---
+        async function loadGhostEspZip(zipUrl) {
+            console.log(`[Debug] loadGhostEspZip called with original URL: ${zipUrl}`); 
+            if (!zipUrl) {
+                // ... (rest of the condition)
+                 if (ghostEspStatusElem) {
+                     ghostEspStatusElem.textContent = 'Select a variant to begin loading firmware files.';
+                     ghostEspStatusElem.className = 'form-text text-muted mt-2';
+                 }
+                return;
+            }
+
+            // --- Update Status UI ---
+             if (ghostEspStatusElem) {
+                 ghostEspStatusElem.textContent = 'Fetching ZIP from GitHub...';
+                 ghostEspStatusElem.className = 'form-text mt-2 loading'; // Add loading class
+             }
+
+            const proxyUrl = `https://fragrant-flower-ba0b.creepersbeast.workers.dev/?url=${encodeURIComponent(zipUrl)}`;
+            console.log(`[Debug] Using CF Worker proxy URL: ${proxyUrl}`); 
+            espLoaderTerminal.writeLine(`Fetching GhostESP firmware via proxy from ${zipUrl}...`);
+            
+            if (ghostEspVariantSelect) ghostEspVariantSelect.disabled = true; 
+            extractedGhostEspFiles = null; 
+
+            try {
+                console.log('[Debug] loadGhostEspZip: Starting fetch via proxy...'); 
+                const response = await fetch(proxyUrl); 
+                console.log(`[Debug] loadGhostEspZip: Fetch response status: ${response.status}, ok: ${response.ok}`); 
+                
+                if (!response.ok) {
+                    // ... (error handling)
+                     if (ghostEspStatusElem) {
+                         ghostEspStatusElem.textContent = `Error fetching: ${response.status}`;
+                         ghostEspStatusElem.className = 'form-text text-danger mt-2 error';
+                     }
+                     throw new Error(proxyErrorDetails); 
+                }
+                
+                 if (ghostEspStatusElem) ghostEspStatusElem.textContent = 'Download complete. Extracting files...';
+
+                const zipBlob = await response.blob();
+                // ... (blob size/type checks) ...
+                
+                espLoaderTerminal.writeLine(`Downloaded ${Math.round(zipBlob.size / 1024)} KB ZIP. Extracting...`);
+
+                console.log('[Debug] loadGhostEspZip: Loading ZIP with JSZip...'); 
+                const zip = await JSZip.loadAsync(zipBlob);
+                console.log('[Debug] loadGhostEspZip: JSZip loaded successfully.'); 
+                
+                const filesToExtract = { // Corrected filenames
+                    app: { name: 'Ghost_ESP_IDF.bin', data: null, elem: appFileInfoElem, addressInput: appAddressInput, type: 'Application' }, 
+                    bootloader: { name: 'bootloader.bin', data: null, elem: bootloaderFileInfoElem, addressInput: bootloaderAddressInput, type: 'Bootloader' }, 
+                    partition: { name: 'partition-table.bin', data: null, elem: partitionFileInfoElem, addressInput: partitionAddressInput, type: 'Partition' } 
+                };
+
+                let foundCount = 0;
+                let foundFilesLog = []; // To log which files were found
+                console.log('[Debug] loadGhostEspZip: Starting file extraction loop...'); 
+                for (const key in filesToExtract) {
+                    const target = filesToExtract[key];
+                    console.log(`[Debug] loadGhostEspZip: Checking for file: ${target.name}`);
+                    
+                    // Try the primary name first
+                    let fileEntry = zip.file(target.name);
+                    
+                    // If not found, try alternative names for specific file types
+                    if (!fileEntry) {
+                        if (key === 'app') {
+                            fileEntry = zip.file('firmware.bin');
+                            if (fileEntry) target.name = 'firmware.bin';
+                        } else if (key === 'partition') {
+                            fileEntry = zip.file('partitions.bin');
+                            if (fileEntry) target.name = 'partitions.bin';
+                        }
+                    }
+                    
+                    if (fileEntry) {
+                        console.log(`[Debug] loadGhostEspZip: Found ${target.name}, extracting data...`);
+                        target.data = await fileEntry.async("arraybuffer");
+                        const fileSizeKB = Math.round(target.data.byteLength / 1024);
+                         console.log(`[Debug] loadGhostEspZip: Extracted ${target.name}, size: ${fileSizeKB} KB. Updating UI...`); 
+                        if (target.elem) {
+                            target.elem.textContent = `${target.name} [Auto-Loaded]`;
+                            document.querySelector(`label[for="${target.elem.id.replace('Info', '')}"]`)?.classList.add('file-uploaded');
+                        }
+                        foundFilesLog.push(target.name);
+                        foundCount++;
+                    } else {
+                        console.log(`[Debug] loadGhostEspZip: ${target.name} not found in ZIP.`);
+                        if (target.elem) {
+                            target.elem.textContent = `${target.name} [Not Found]`;
+                            document.querySelector(`label[for="${target.elem.id.replace('Info', '')}"]`)?.classList.remove('file-uploaded');
+                        }
+                    }
+                }
+                console.log(`[Debug] loadGhostEspZip: Extraction loop finished. Found count: ${foundCount}`); 
+
+                if (foundCount > 0) {
+                     extractedGhostEspFiles = filesToExtract; 
+                     espLoaderTerminal.writeLine("Extraction complete. Files ready.");
+                      if (ghostEspStatusElem) { // Update status on success
+                          ghostEspStatusElem.textContent = `Loaded: ${foundFilesLog.join(', ')}`;
+                          ghostEspStatusElem.className = 'form-text text-success mt-2 success';
+                      }
+                     updateBinaryTypeIndicators(); 
+                     updateFlashSummary(); 
+                } else {
+                     clearExtractedData(); 
+                     updateFlashSummary();
+                      if (ghostEspStatusElem) { // Update status on failure
+                         ghostEspStatusElem.textContent = 'Error: No required .bin files found in ZIP.';
+                         ghostEspStatusElem.className = 'form-text text-danger mt-2 error';
+                     }
+                    throw new Error("No required .bin files found in the downloaded ZIP.");
+                }
+
+            } catch (error) {
+                console.error("[Debug] Error loading or extracting GhostESP ZIP:", error); 
+                espLoaderTerminal.writeLine(`❌ Error processing GhostESP ZIP: ${error.message}`);
+                 if (ghostEspStatusElem) { // Update status on catch
+                     ghostEspStatusElem.textContent = `Error: ${error.message}`;
+                     ghostEspStatusElem.className = 'form-text text-danger mt-2 error';
+                 }
+                extractedGhostEspFiles = null; 
+                 if (appFileInfoElem) appFileInfoElem.textContent = 'ZIP Load Failed';
+                 if (bootloaderFileInfoElem) bootloaderFileInfoElem.textContent = 'ZIP Load Failed';
+                 if (partitionFileInfoElem) partitionFileInfoElem.textContent = 'ZIP Load Failed';
+                 document.querySelectorAll('.custom-file-upload.file-uploaded').forEach(el => el.classList.remove('file-uploaded'));
+                 updateBinaryTypeIndicators(); // Clear badges on error
+            } finally {
+                console.log('[Debug] loadGhostEspZip: Finally block reached. Re-enabling select.'); 
+                 if (ghostEspVariantSelect) ghostEspVariantSelect.disabled = false; 
+                updateButtonStates(); 
+            }
+        }
+
+        // --- Modify setupDownloadLinkListener ---
+        // Listener for Marauder should still work
+        // Listener for GhostESP is now attached *after* populateRepoOptions finishes in the downloadSourceSelect listener
+        function setupDownloadLinkListener(selectElement, linkElement) {
+             // Refined check: selectElement is always required.
+             // linkElement is only required if it's NOT the GhostESP select.
+             if (!selectElement) {
+                 console.error(`[Debug] setupDownloadLinkListener: Missing selectElement!`);
+                 return;
+             }
+             if (selectElement.id !== 'ghostEspVariantSelect' && !linkElement) { 
+                 console.error(`[Debug] setupDownloadLinkListener: Missing linkElement for Select: ${selectElement.id}`);
+                 return;
+             }
+             // If it IS ghostEspVariantSelect, linkElement can be null, so we proceed.
+
+            // Remove previous listener if any, to avoid duplicates when re-attaching
+
+            selectElement.addEventListener('change', () => {
+                const selectedValue = selectElement.value;
+                console.log(`[Debug] Select changed for ID: ${selectElement.id}, Value: ${selectedValue}`); 
+
+                // --- GhostESP Special Handling ---
+                if (selectElement.id === 'ghostEspVariantSelect') {
+                    console.log('[Debug] GhostESP variant selected, attempting load...'); 
+                    // Remove lines trying to modify the null linkElement for GhostESP
+                    // linkElement.href = '#'; // REMOVED
+                    // linkElement.classList.add('disabled'); // REMOVED
+                    // linkElement.classList.replace('btn-primary', 'btn-secondary'); // REMOVED
+                    loadGhostEspZip(selectedValue); 
+                // --- Default Handling (Marauder) ---
+                } else if (selectElement.id === 'marauderVariantSelect') { // Be specific
+                    console.log('[Debug] Marauder select changed.'); 
+                    if (selectedValue) {
+                        linkElement.href = selectedValue;
                         linkElement.classList.remove('disabled');
                         linkElement.classList.replace('btn-secondary', 'btn-primary');
                     } else {
@@ -1294,89 +2031,187 @@ document.addEventListener('DOMContentLoaded', () => {
                         linkElement.classList.add('disabled');
                         linkElement.classList.replace('btn-primary', 'btn-secondary');
                     }
-                });
-            }
+                }
+            });
+             console.log(`[Debug] Attached change listener to ${selectElement.id}`);
         }
 
+        // --- Remove the early calls for listeners ---
+        // setupDownloadLinkListener(ghostEspVariantSelect, ghostEspDownloadLink); 
+        // setupDownloadLinkListener(marauderVariantSelect, marauderDownloadLink); // Call this later too if needed, or ensure elements exist
+
+        // --- Ensure Marauder listener is attached (if elements exist on load) ---
+         // It's safer to attach this listener when the Marauder section becomes visible,
+         // similar to how we handle GhostESP now. Let's adjust that too.
+
+        // --- REMOVE OLD firmwareSourceSelect listener ---
+        /* 
         if (firmwareSourceSelect) {
             firmwareSourceSelect.addEventListener('change', () => {
-                const selectedSource = firmwareSourceSelect.value;
-
-                // Reset file inputs if switching away from manual
-                 if (selectedSource !== 'manual') {
-                     appFileInput.value = '';
-                     bootloaderFileInput.value = '';
-                     partitionFileInput.value = '';
-                     if(appFileInfoElem) appFileInfoElem.textContent = 'No file selected';
-                     if(bootloaderFileInfoElem) bootloaderFileInfoElem.textContent = 'No file selected';
-                     if(partitionFileInfoElem) partitionFileInfoElem.textContent = 'No file selected';
-                     // Clear visual indicators too if you have them
-                     updateBinaryTypeIndicators(); 
-                 }
-
-                const allDownloadSections = [ghostEspDownloadSection, marauderDownloadSection];
-                const allDownloadLinks = [ghostEspDownloadLink, marauderDownloadLink];
-
-                manualUploadSection.classList.add('d-none');
-                allDownloadSections.forEach(section => section?.classList.add('d-none'));
-                allDownloadLinks.forEach(link => {
-                    if (link) {
-                        link.href = '#';
-                        link.classList.add('disabled');
-                        link.classList.replace('btn-primary', 'btn-secondary');
-                    }
-                });
-
-                if (selectedSource === 'manual') {
-                    manualUploadSection.classList.remove('d-none');
-                } else if (selectedSource === 'ghostesp') {
-                    ghostEspDownloadSection?.classList.remove('d-none');
-                    // Pass the selectedDevice (chip type) to filter the options
-                    populateRepoOptions('Spooks4576', 'Ghost_ESP', 'ghostEspVariantSelect', '.zip', '-- Select a GhostESP ZIP... --', selectedDevice); 
-                } else if (selectedSource === 'marauder') {
-                    marauderDownloadSection?.classList.remove('d-none');
-                    populateRepoOptions('justcallmekoko', 'ESP32Marauder', 'marauderVariantSelect', '.bin', '-- Select a Marauder BIN... --');
-                }
-                
+               // ... OLD LOGIC ...
             });
-
-            // Trigger change on load IF a device is already selected maybe?
-            // Or just let manual be default.
+             console.log('[Debug] Dispatching initial change event for firmwareSourceSelect'); 
             firmwareSourceSelect.dispatchEvent(new Event('change')); 
+        } 
+        */
+
+        // --- Modify hasFirmwareFilesSelected ---
+        function hasFirmwareFilesSelected() {
+             // Check based on the *selected method*
+             if (selectedFirmwareMethod === 'download') {
+                 // If download was chosen, check if Ghost files were extracted
+                 return extractedGhostEspFiles && (extractedGhostEspFiles.app.data || extractedGhostEspFiles.bootloader.data || extractedGhostEspFiles.partition.data);
+             } else if (selectedFirmwareMethod === 'manual') {
+                 // Original check for manual files
+                 return (appFileInput?.files?.length > 0) ||
+                        (bootloaderFileInput?.files?.length > 0) ||
+                        (partitionFileInput?.files?.length > 0);
+             }
+             return false; // No method selected yet
         }
 
-        setupDownloadLinkListener(ghostEspVariantSelect, ghostEspDownloadLink);
-        setupDownloadLinkListener(marauderVariantSelect, marauderDownloadLink);
+        // --- Modify updateFlashSummary ---
+        function updateFlashSummary() {
+            flashSummaryElem.innerHTML = '';
+            flashSummaryElem.classList.add('flash-summary-box');
+            let hasBinaries = false;
+            const addSummaryItem = (icon, text) => {
+                flashSummaryElem.innerHTML += `<div class="summary-item"><i class="bi ${icon} me-2"></i> ${text}</div>`;
+            };
 
-        // Add this function to update the binary type buttons to show which have files
+            // Check based on the *selected method*
+            if (selectedFirmwareMethod === 'download' && extractedGhostEspFiles) {
+                // Use extracted GhostESP data 
+                 if (extractedGhostEspFiles.app.data) {
+                     const address = extractedGhostEspFiles.app.addressInput.value;
+                     addSummaryItem('bi-file-earmark-binary', `Application: ${extractedGhostEspFiles.app.name} at ${address} [Auto]`);
+                     hasBinaries = true;
+                 }
+                 if (extractedGhostEspFiles.bootloader.data) {
+                     const address = extractedGhostEspFiles.bootloader.addressInput.value;
+                     addSummaryItem('bi-hdd-network', `Bootloader: ${extractedGhostEspFiles.bootloader.name} at ${address} [Auto]`);
+                     hasBinaries = true;
+                 }
+                 if (extractedGhostEspFiles.partition.data) {
+                     const address = extractedGhostEspFiles.partition.addressInput.value;
+                     addSummaryItem('bi-table', `Partition Table: ${extractedGhostEspFiles.partition.name} at ${address} [Auto]`);
+                     hasBinaries = true;
+                 }
+            } else if (selectedFirmwareMethod === 'manual') {
+                // Use manual inputs 
+                 if (appFileInput?.files?.length > 0) {
+                     // ... (manual file summary) ...
+                 }
+                 // ... (bootloader/partition summary) ...
+            } // else: No method selected or no files yet
+
+             // --- Fallback to manual inputs (keep existing logic inside the 'else' block) ---
+             if (selectedFirmwareMethod === 'manual') {
+                if (appFileInput?.files?.length > 0) {
+                    const file = appFileInput.files[0];
+                    const address = appAddressInput.value;
+                    addSummaryItem('bi-file-earmark-binary', `Application: ${file.name} at ${address}`);
+                    hasBinaries = true;
+                }
+                if (bootloaderFileInput?.files?.length > 0) {
+                    const file = bootloaderFileInput.files[0];
+                    const address = bootloaderAddressInput.value;
+                    addSummaryItem('bi-hdd-network', `Bootloader: ${file.name} at ${address}`);
+                    hasBinaries = true;
+                }
+                if (partitionFileInput?.files?.length > 0) {
+                    const file = partitionFileInput.files[0];
+                    const address = partitionAddressInput.value;
+                    addSummaryItem('bi-table', `Partition Table: ${file.name} at ${address}`);
+                    hasBinaries = true;
+                }
+             }
+
+            if (!hasBinaries) {
+                flashSummaryElem.innerHTML = '<div class="summary-item text-warning"><i class="bi bi-exclamation-triangle me-2"></i> Select method and provide firmware</div>';
+                if (flashButton) flashButton.disabled = true; 
+            } else {
+                 if (flashButton) flashButton.disabled = !connected; 
+            }
+            addSummaryItem('bi-gear', `Settings: ${flashModeSelect.value.toUpperCase()}, ${flashFreqSelect.value}, ${flashSizeSelect.value}`);
+            if (eraseAllCheckbox.checked) {
+                addSummaryItem('bi-eraser-fill text-warning', '<strong>Erase all flash before programming</strong>');
+            }
+             updateButtonStates(); 
+        }
+
+
+        // --- Modify updateButtonStates ---
+         function updateButtonStates() {
+             // ... (connection button logic) ...
+             
+             // Action buttons depend on method and files/connection
+             const canFlash = connected && hasFirmwareFilesSelected();
+             if (flashButton) flashButton.disabled = !canFlash; 
+             if (eraseButton) eraseButton.disabled = !connected;
+             if (resetButton) resetButton.disabled = !connected;
+             
+             // ... (connection settings logic) ...
+
+             // Enable "Continue" (Next to Step 4) only if a method is selected AND files are ready
+             if (nextToStep4Button) nextToStep4Button.disabled = !hasFirmwareFilesSelected();
+
+             // ... (rest of button logic) ...
+         }
+
+        // --- Modify startOver button ---
+         startOverButton.addEventListener('click', () => {
+             selectFirmwareMethod(null); // Reset the primary choice
+             // Existing clear functions are good
+             clearExtractedData(); 
+             clearManualInputs(); 
+             if (connected) {
+                 disconnect().then(() => goToStep(1));
+             } else {
+                 goToStep(1);
+             }
+         });
+
+        // --- Modify updateBinaryTypeIndicators ---
         function updateBinaryTypeIndicators() {
-            // Clear existing badges first
             document.querySelectorAll('.file-badge').forEach(badge => badge.remove());
             
-            // Check if app file is selected
-            if (appFileInput && appFileInput.files && appFileInput.files.length > 0) {
+            let hasApp = false, hasBootloader = false, hasPartition = false;
+
+            // Only show badges based on the *current* state, respecting selected method
+            if (selectedFirmwareMethod === 'download' && extractedGhostEspFiles) {
+                hasApp = !!extractedGhostEspFiles.app.data;
+                hasBootloader = !!extractedGhostEspFiles.bootloader.data;
+                hasPartition = !!extractedGhostEspFiles.partition.data;
+            } else if (selectedFirmwareMethod === 'manual') {
+                 hasApp = appFileInput?.files?.length > 0;
+                 hasBootloader = bootloaderFileInput?.files?.length > 0;
+                 hasPartition = partitionFileInput?.files?.length > 0;
+            }
+            // Otherwise, no badges shown if no method is selected
+
+            if (hasApp) { /* ... add badge ... */ }
+            if (hasBootloader) { /* ... add badge ... */ }
+            if (hasPartition) { /* ... add badge ... */ }
+            // --- (No changes needed inside the badge adding logic itself) ---
+            if (hasApp) {
                 const appButton = document.querySelector('[data-binary="app"]');
-                if (appButton) {
-                    appButton.insertAdjacentHTML('beforeend', '<span class="file-badge"></span>');
-                }
+                appButton?.insertAdjacentHTML('beforeend', '<span class="file-badge"></span>');
             }
-            
-            // Check if bootloader file is selected
-            if (bootloaderFileInput && bootloaderFileInput.files && bootloaderFileInput.files.length > 0) {
+            if (hasBootloader) {
                 const bootloaderButton = document.querySelector('[data-binary="bootloader"]');
-                 if (bootloaderButton) {
-                    bootloaderButton.insertAdjacentHTML('beforeend', '<span class="file-badge"></span>');
-                 }
+                 bootloaderButton?.insertAdjacentHTML('beforeend', '<span class="file-badge"></span>');
             }
-            
-            // Check if partition file is selected
-            if (partitionFileInput && partitionFileInput.files && partitionFileInput.files.length > 0) {
+            if (hasPartition) {
                 const partitionButton = document.querySelector('[data-binary="partition"]');
-                 if (partitionButton) {
-                    partitionButton.insertAdjacentHTML('beforeend', '<span class="file-badge"></span>');
-                 }
+                 partitionButton?.insertAdjacentHTML('beforeend', '<span class="file-badge"></span>');
             }
         }
+        
+         // --- Initialize Step 3 View ---
+         // Call selectFirmwareMethod initially with null to ensure correct hidden state
+         selectFirmwareMethod(null); 
+
     }
 
     // Add this function to update the modern status indicator
