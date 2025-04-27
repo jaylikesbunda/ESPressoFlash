@@ -1261,12 +1261,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add a mapping for nice names (based on the provided YAML)
         const ghostEspNiceNames = {
             "esp32-generic.zip": "Generic ESP32",
+            "esp32-generic.zip": "FlipperHub Rocket",
             "esp32s2-generic.zip": "Generic ESP32-S2",
             "esp32s3-generic.zip": "Generic ESP32-S3",
             "esp32c3-generic.zip": "Generic ESP32-C3",
             "esp32c6-generic.zip": "Generic ESP32-C6",
             "esp32v5_awok.zip": "Awok V5 (ESP32-S2)",
-            "ghostboard.zip": "GhostBoard (ESP32-C6)",
+            "ghostboard.zip": "Rabbit Labs' GhostBoard (ESP32-C6)",
             "MarauderV4_FlipperHub.zip": "Marauder V4 / FlipperHub (ESP32)",
             "MarauderV6_AwokDual.zip": "Marauder V6 / Awok Dual (ESP32)",
             "AwokMini.zip": "Awok Mini (ESP32)",
