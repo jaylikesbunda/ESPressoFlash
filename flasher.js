@@ -1277,7 +1277,8 @@ document.addEventListener('DOMContentLoaded', () => {
             "CYD2USB2.4Inch.zip": "CYD 2.4 Inch USB (ESP32)",
             "CYD2USB2.4Inch_C.zip": "CYD 2.4 Inch USB-C (ESP32)",
             "Waveshare_LCD.zip": "Waveshare 7\" LCD (ESP32-S3)",
-            "Crowtech_LCD.zip": "Crowtech 7\" LCD (ESP32-S3)"
+            "Crowtech_LCD.zip": "Crowtech 7\" LCD (ESP32-S3)",
+            "LilyGo-S3TWatch-2020.zip": "LilyGo S3 T-Watch 2020 (ESP32-S3)"
         };
 
         // Mapping from build target (idf_target) to chip name used in 'selectedDevice'
@@ -1309,7 +1310,8 @@ document.addEventListener('DOMContentLoaded', () => {
             "CYD2USB2.4Inch.zip": "esp32",
             "CYD2USB2.4Inch_C.zip": "esp32",
             "Waveshare_LCD.zip": "esp32s3",
-            "Crowtech_LCD.zip": "esp32s3"
+            "Crowtech_LCD.zip": "esp32s3",
+            "LilyGo-S3TWatch-2020.zip": "esp32s3"
         };
 
         // --- Helper function to populate assets into a parent element ---
