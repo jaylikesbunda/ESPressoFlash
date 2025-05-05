@@ -1334,6 +1334,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     // --- End Filtering Logic ---
 
+                    // --- Special Handling for esp32-generic.zip ---
+                    if (repo === 'Ghost_ESP' && asset.name === "esp32-generic.zip") {
+                        // Manually create both options for this specific ZIP
+                        const option1 = document.createElement('option');
+                        option1.value = asset.browser_download_url;
+                        option1.textContent = "Generic ESP32";
+                        parentElement.appendChild(option1);
+
+                        const option2 = document.createElement('option');
+                        option2.value = asset.browser_download_url;
+                        option2.textContent = "FlipperHub Rocket"; // Use the second name
+                        parentElement.appendChild(option2);
+
+                        foundFiles = true;
+                        return; // Skip the default processing below for this asset
+                    }
+                    // --- End Special Handling ---
+
+                    // --- Default processing for other assets ---
                     foundFiles = true;
                     const option = document.createElement('option');
                     option.value = asset.browser_download_url;
