@@ -424,6 +424,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
             dropZone.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 if (e.target !== fileInput) {
                     fileInput.click();
                 }
