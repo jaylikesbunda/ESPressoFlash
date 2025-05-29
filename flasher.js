@@ -1278,7 +1278,6 @@ document.addEventListener('DOMContentLoaded', () => {
             "CYDMicroUSB.zip": "CYD MicroUSB (ESP32)",
             "CYDDualUSB.zip": "CYD Dual USB (ESP32)",
             "CYD2USB2.4Inch.zip": "CYD 2.4 Inch USB (ESP32)",
-            "CYD2USB2.4Inch.zip": "Rabbit Labs' Phantom",
             "CYD2USB2.4Inch_C.zip": "CYD 2.4 Inch USB-C (ESP32)",
             "Waveshare_LCD.zip": "Waveshare 7\" LCD (ESP32-S3)",
             "Crowtech_LCD.zip": "Crowtech 7\" LCD (ESP32-S3)",
@@ -1355,6 +1354,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         foundFiles = true;
                         return; // Skip the default processing below for this asset
+                    }
+                    // --- End Special Handling ---
+
+                    // --- Special Handling for CYD2USB2.4Inch.zip ---
+                    if (repo === 'Ghost_ESP' && asset.name === "CYD2USB2.4Inch.zip") {
+                        const option1 = document.createElement('option');
+                        option1.value = asset.browser_download_url;
+                        option1.textContent = "CYD 2.4 Inch USB (ESP32)";
+                        parentElement.appendChild(option1);
+
+                        const option2 = document.createElement('option');
+                        option2.value = asset.browser_download_url;
+                        option2.textContent = "Rabbit Labs' Phantom";
+                        parentElement.appendChild(option2);
+
+                        foundFiles = true;
+                        return;
                     }
                     // --- End Special Handling ---
 
