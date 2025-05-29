@@ -1278,6 +1278,7 @@ document.addEventListener('DOMContentLoaded', () => {
             "CYDMicroUSB.zip": "CYD MicroUSB (ESP32)",
             "CYDDualUSB.zip": "CYD Dual USB (ESP32)",
             "CYD2USB2.4Inch.zip": "CYD 2.4 Inch USB (ESP32)",
+            "CYD2USB2.4Inch.zip": "Rabbit Labs' Phantom",
             "CYD2USB2.4Inch_C.zip": "CYD 2.4 Inch USB-C (ESP32)",
             "Waveshare_LCD.zip": "Waveshare 7\" LCD (ESP32-S3)",
             "Crowtech_LCD.zip": "Crowtech 7\" LCD (ESP32-S3)",
