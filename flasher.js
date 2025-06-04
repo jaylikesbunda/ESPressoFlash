@@ -1282,7 +1282,8 @@ document.addEventListener('DOMContentLoaded', () => {
             "Waveshare_LCD.zip": "Waveshare 7\" LCD (ESP32-S3)",
             "Crowtech_LCD.zip": "Crowtech 7\" LCD (ESP32-S3)",
             "LilyGo-S3TWatch-2020.zip": "LilyGo S3 T-Watch 2020 (ESP32-S3)",
-            "esp32c5-generic.zip": "Generic ESP32-C5"
+            "esp32c5-generic.zip": "Generic ESP32-C5",
+            "esp32c5-generic-v01.zip": "Generic ESP32-C5 (v01)"
         };
 
         // Mapping from build target (idf_target) to chip name used in 'selectedDevice'
@@ -1317,7 +1318,8 @@ document.addEventListener('DOMContentLoaded', () => {
             "Waveshare_LCD.zip": "esp32s3",
             "Crowtech_LCD.zip": "esp32s3",
             "LilyGo-S3TWatch-2020.zip": "esp32s3",
-            "esp32c5-generic.zip": "esp32c5"
+            "esp32c5-generic.zip": "esp32c5",
+            "esp32c5-generic-v01.zip": "esp32c5"
         };
 
         // --- Helper function to populate assets into a parent element ---
