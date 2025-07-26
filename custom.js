@@ -197,8 +197,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         document.cookie = "multipleEyesAngered=true; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/";
                         // Set cookie to default to dark mode
                         document.cookie = "darkMode=true; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/";
-                        // Close the window
-                        window.close();
+                        
+                        // Try to close the window, but handle cases where it's not allowed
+                        try {
+                            // This will only work if the window was opened by JavaScript
+                            if (!window.opener) {
+                                // If we can't close, redirect to a blank page
+                                window.location.href = 'about:blank';
+                            } else {
+                                window.close();
+                            }
+                        } catch (e) {
+                            // If window.close() fails, redirect to a blank page
+                            window.location.href = 'about:blank';
+                        }
                     } else {
                         // Reload the page for a single angry eye pair
                         location.reload();
