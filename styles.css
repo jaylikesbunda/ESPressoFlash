@@ -19,11 +19,243 @@
     --transition: all 0.3s ease;
 }
 
+:root.dark-mode {
+    --bg-color: #000000;
+    --text-color: #ffffff;
+}
+
+/* Twinkling Eyes for Dark Mode */
+.eyes-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999; /* In front of other content to ensure clicks work */
+    display: none; /* Hidden by default */
+    overflow: hidden; /* Prevent eyes from being cut off at edges */
+}
+
+:root.dark-mode .eyes-container {
+    display: block; /* Show only in dark mode */
+}
+
+.eye-pair {
+    position: absolute;
+    display: flex;
+    gap: 250px; /* Much more spacing between eyes for field of stars effect */
+    /* Add padding to prevent cutoff at screen edges */
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.eye {
+    width: 12px; /* Larger eyes */
+    height: 12px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #ffffff, 0 0 15px #ffffff;
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 0.3s ease;
+    /* Ensure eyes don't get cut off */
+    flex-shrink: 0;
+    /* Enable pointer events for clicking */
+    pointer-events: auto;
+    cursor: default; /* Show normal cursor */
+}
+
+/* Default red eyes when multiple pairs have been angered */
+body.multiple-eyes-angered .eye {
+    background-color: #ff0000;
+    box-shadow: 0 0 8px #ff0000, 0 0 15px #ff0000 !important;
+}
+
+/* Hide eyes on loading overlay */
+.loading-overlay ~ .eyes-container {
+    display: none !important;
+}
+
+/* Eyelid styling */
+.eyelid {
+    position: absolute;
+    top: -100%; /* Start above the eye */
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000000;
+    border-radius: 50%;
+    transition: top 0.1s ease;
+}
+
+/* Remove CSS animations since we're handling blinking with JavaScript */
+.eye-pair:nth-child(1) .eyelid {
+    animation: none;
+}
+
+.eye-pair:nth-child(2) .eyelid {
+    animation: none;
+}
+
+.eye-pair:nth-child(3) .eyelid {
+    animation: none;
+}
+
+.eye-pair:nth-child(4) .eyelid {
+    animation: none;
+}
+
+.eye-pair:nth-child(5) .eyelid {
+    animation: none;
+}
+
+.eye-pair:nth-child(6) .eyelid {
+    animation: none;
+}
+
+.eye-pair:nth-child(7) .eyelid {
+    animation: none;
+}
+
+/* Red eye effect */
+.eye.clicked {
+    background-color: #ff0000 !important;
+    box-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000 !important;
+}
+
+/* Escalating shaking animations for eye pairs */
+.eye-pair.shake {
+    animation: shakeLevel1 0.5s infinite;
+}
+
+/* Adjust animation for each pair to match their rotation */
+.eye-pair:nth-child(1).shake {
+    animation: shakeLevel1 0.5s infinite;
+}
+
+.eye-pair:nth-child(2).shake {
+    animation: shakeLevel2 0.4s infinite;
+}
+
+.eye-pair:nth-child(3).shake {
+    animation: shakeLevel3 0.3s infinite;
+}
+
+.eye-pair:nth-child(4).shake {
+    animation: shakeLevel4 0.2s infinite;
+}
+
+.eye-pair:nth-child(5).shake {
+    animation: shakeLevel5 0.1s infinite;
+}
+
+.eye-pair:nth-child(6).shake {
+    animation: shakeLevel4 0.2s infinite;
+}
+
+.eye-pair:nth-child(7).shake {
+    animation: shakeLevel3 0.3s infinite;
+}
+
+@keyframes shakeLevel1 {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(-2px, -1px); }
+    50% { transform: translate(2px, 1px); }
+    75% { transform: translate(-2px, 1px); }
+    100% { transform: translate(0, 0); }
+}
+
+@keyframes shakeLevel2 {
+    0% { transform: translate(0, 0); }
+    16% { transform: translate(-4px, -2px); }
+    33% { transform: translate(4px, 2px); }
+    50% { transform: translate(-4px, 2px); }
+    66% { transform: translate(4px, -2px); }
+    83% { transform: translate(-2px, 1px); }
+    100% { transform: translate(0, 0); }
+}
+
+@keyframes shakeLevel3 {
+    0% { transform: translate(0, 0); }
+    12% { transform: translate(-6px, -3px); }
+    25% { transform: translate(6px, 3px); }
+    37% { transform: translate(-6px, 3px); }
+    50% { transform: translate(6px, -3px); }
+    62% { transform: translate(-4px, 2px); }
+    75% { transform: translate(4px, -2px); }
+    87% { transform: translate(-2px, 1px); }
+    100% { transform: translate(0, 0); }
+}
+
+@keyframes shakeLevel4 {
+    0% { transform: translate(0, 0); }
+    10% { transform: translate(-8px, -4px); }
+    20% { transform: translate(8px, 4px); }
+    30% { transform: translate(-8px, 4px); }
+    40% { transform: translate(8px, -4px); }
+    50% { transform: translate(-6px, 3px); }
+    60% { transform: translate(6px, -3px); }
+    70% { transform: translate(-4px, 2px); }
+    80% { transform: translate(4px, -2px); }
+    90% { transform: translate(-2px, 1px); }
+    100% { transform: translate(0, 0); }
+}
+
+@keyframes shakeLevel5 {
+    0% { transform: translate(0, 0); }
+    9% { transform: translate(-10px, -5px); }
+    18% { transform: translate(10px, 5px); }
+    27% { transform: translate(-10px, 5px); }
+    36% { transform: translate(10px, -5px); }
+    45% { transform: translate(-8px, 4px); }
+    54% { transform: translate(8px, -4px); }
+    63% { transform: translate(-6px, 3px); }
+    72% { transform: translate(6px, -3px); }
+    81% { transform: translate(-4px, 2px); }
+    90% { transform: translate(4px, -2px); }
+    95% { transform: translate(-2px, 1px); }
+    100% { transform: translate(0, 0); }
+}
+
+@keyframes twinkle {
+    0%, 100% { 
+        opacity: 0.3; 
+        transform: scale(0.9);
+    }
+    50% { 
+        opacity: 1; 
+        transform: scale(1.1);
+    }
+}
+
+/* Different animation delays for each eye pair for a more natural effect */
+.eye-pair:nth-child(1) .eye {
+    animation-delay: 0s;
+}
+
+.eye-pair:nth-child(2) .eye {
+    animation-delay: 1.8s;
+}
+
+.eye-pair:nth-child(3) .eye {
+    animation-delay: 3.2s;
+}
+
+.eye-pair:nth-child(4) .eye {
+    animation-delay: 2.5s;
+}
+
+.eye-pair:nth-child(5) .eye {
+    animation-delay: 1.3s;
+}
+
 body {
     background-color: var(--bg-color);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: var(--text-color);
     padding-bottom: 2rem;
+    overflow-x: hidden; /* Prevent horizontal scroll from eyes */
 }
 
 .container-fluid {
@@ -176,14 +408,28 @@ h2 {
 }
 
 .card {
+    border: none;
+    border-radius: 0;
+    background-color: var(--bg-color);
+    box-shadow: none;
     margin-bottom: 1.5rem;
     overflow: hidden;
     transition: var(--transition);
-    background-color: var(--bg-color);
+}
+
+.card-body {
+    background-color: transparent;
 }
 
 .card:hover {
-    background-color: var(--card-bg-hover);
+    background-color: var(--bg-color);
+}
+
+.settings-card, .choice-card {
+    background-color: var(--bg-color);
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
 }
 
 .card-title {
@@ -364,12 +610,90 @@ input[type="file"] {
     align-items: center;
 }
 
+:root.dark-mode .stepper::before {
+    background-color: var(--border-color);
+}
+:root.dark-mode .stepper-circle {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+:root.dark-mode .stepper-circle.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+:root.dark-mode .stepper-circle.completed {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    color: #fff;
+}
+:root.dark-mode .stepper-labels div {
+    color: var(--text-muted);
+}
+:root.dark-mode select.form-select option {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+:root.dark-mode .form-select:focus {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(195, 134, 95, 0.25);
+}
+
+:root.dark-mode .form-select,
+:root.dark-mode select.form-select {
+  background-color: var(--bg-color) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-color) !important;
+}
+:root.dark-mode .form-select:focus,
+:root.dark-mode select.form-select:focus {
+  background-color: var(--bg-color) !important;
+  color: var(--text-color) !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.25rem rgba(195, 134, 95, 0.25) !important;
+}
+:root.dark-mode .form-select option,
+:root.dark-mode select.form-select option {
+  background-color: var(--bg-color) !important;
+  color: var(--text-color) !important;
+}
+
+:root.dark-mode .form-select,
+:root.dark-mode select.form-select {
+  background-color: var(--bg-color) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
+
+:root.dark-mode .form-select:focus,
+:root.dark-mode select.form-select:focus {
+  background-color: var(--bg-color) !important;
+  color: var(--text-color) !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.25rem rgba(195, 134, 95, 0.25) !important;
+}
+
+:root.dark-mode .form-select option,
+:root.dark-mode select.form-select option {
+  background-color: var(--bg-color) !important;
+  color: var(--text-color) !important;
+}
+
 #terminal-container {
-    background-color: var(--dark-color);
-    color: #f0f0f0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
     border-radius: var(--border-radius);
     overflow: hidden;
     margin-top: 2rem;
+    border: 1px solid var(--border-color);
+}
+
+:root.dark-mode #terminal-container {
+    background-color: var(--bg-color);
+    color: var(--text-color);
 }
 
 .terminal-header {
@@ -499,10 +823,16 @@ footer a:hover {
 
 /* Modal Styling for Dark Theme */
 .modal-content {
-    background-color: var(--card-bg);
+    background-color: var(--bg-color);
     color: var(--text-color);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
+}
+
+:root.dark-mode .modal-content {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border-color: var(--border-color);
 }
 
 .modal-header {
@@ -559,15 +889,20 @@ footer a:hover {
 /* Help Diagram Styles */
 .help-diagram {
     display: flex;
-    justify-content: space-around; /* Distribute space */
+    justify-content: space-around;
     align-items: center;
-    flex-wrap: wrap; /* Allow wrapping on smaller screens */
-    gap: 1rem; /* Space between items */
+    flex-wrap: wrap;
+    gap: 1rem;
     padding: 1.5rem;
-    background-color: var(--darker-color); /* Slightly darker background */
+    background-color: var(--bg-color);
     border-radius: var(--border-radius);
     margin-top: 1.5rem;
     border: 1px solid var(--border-color);
+}
+
+:root.dark-mode .help-diagram {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
 }
 
 .help-step {
@@ -586,9 +921,13 @@ footer a:hover {
 
 .help-step p {
     font-size: 0.8rem;
-    color: var(--text-muted);
+    color: var(--text-color);
     margin-bottom: 0;
     line-height: 1.2;
+}
+
+:root.dark-mode .help-step p {
+    color: var(--text-color);
 }
 
 .help-arrow {
@@ -686,4 +1025,29 @@ footer a:hover {
 }
 #ghostEspStatus.success {
     color: var(--success-color); /* Success color on completion */
-} 
+}
+
+/* Dark-mode select overrides */
+:root.dark-mode select,
+:root.dark-mode .form-select,
+:root.dark-mode select.form-select {
+  background-color: var(--bg-color) !important;
+  color: var(--text-color) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+:root.dark-mode select option,
+:root.dark-mode .form-select option,
+:root.dark-mode select.form-select option {
+  background-color: var(--bg-color) !important;
+  color: var(--text-color) !important;
+}
+
+:root.dark-mode select:focus,
+:root.dark-mode .form-select:focus,
+:root.dark-mode select.form-select:focus {
+  background-color: var(--bg-color) !important;
+  color: var(--text-color) !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.25rem rgba(195, 134, 95, 0.25) !important;
+}

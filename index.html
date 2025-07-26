@@ -19,7 +19,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 9999;
+            z-index: 10001; /* Higher than eyes */
             opacity: 1; /* Start visible */
             transition: opacity 0.5s ease; /* Fade out transition */
             visibility: visible; /* Start visible */
@@ -124,9 +124,69 @@
          </div>
      </div>
 
+    <!-- Twinkling Eyes for Dark Mode -->
+    <div class="eyes-container">
+        <div class="eye-pair" style="top: 15%; left: 10%; transform: rotate(-15deg);">
+            <div class="eye">
+                <div class="eyelid"></div>
+            </div>
+            <div class="eye">
+                <div class="eyelid"></div>
+            </div>
+        </div>
+        <div class="eye-pair" style="top: 10%; left: 85%; transform: rotate(20deg);">
+            <div class="eye">
+                <div class="eyelid"></div>
+            </div>
+            <div class="eye">
+                <div class="eyelid"></div>
+            </div>
+        </div>
+        <div class="eye-pair" style="top: 75%; left: 15%; transform: rotate(10deg);">
+            <div class="eye">
+                <div class="eyelid"></div>
+            </div>
+            <div class="eye">
+                <div class="eyelid"></div>
+            </div>
+        </div>
+        <div class="eye-pair" style="top: 80%; left: 80%; transform: rotate(-25deg);">
+            <div class="eye">
+                <div class="eyelid"></div>
+            </div>
+            <div class="eye">
+                <div class="eyelid"></div>
+            </div>
+        </div>
+        <div class="eye-pair" style="top: 45%; left: 50%; transform: rotate(5deg);">
+            <div class="eye">
+                <div class="eyelid"></div>
+            </div>
+            <div class="eye">
+                <div class="eyelid"></div>
+            </div>
+        </div>
+        <div class="eye-pair" style="top: 30%; left: 30%; transform: rotate(-10deg);">
+            <div class="eye">
+                <div class="eyelid"></div>
+            </div>
+            <div class="eye">
+                <div class="eyelid"></div>
+            </div>
+        </div>
+        <div class="eye-pair" style="top: 60%; left: 70%; transform: rotate(15deg);">
+            <div class="eye">
+                <div class="eyelid"></div>
+            </div>
+            <div class="eye">
+                <div class="eyelid"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="container-fluid">
         <header class="py-3 text-center">
-            <h1>ESPressoFlash</h1>
+            <h1 id="darkModeToggle" style="cursor:pointer;" title="Toggle dark mode">ESPressoFlash</h1>
             <p class="text-muted">Flash your ESP32 quickly and easily</p>
         </header>
 

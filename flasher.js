@@ -1,4 +1,27 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Dark mode toggle functionality
+    const titleToggle = document.getElementById('darkModeToggle');
+    if (titleToggle) {
+        titleToggle.addEventListener('click', () => {
+            // Add gravity effect to title
+            titleToggle.style.transition = 'all 0.5s ease';
+            titleToggle.style.transform = 'translateY(10px)';
+            
+            // Toggle dark mode class
+            document.documentElement.classList.toggle('dark-mode');
+            
+            // Apply gravity effect
+            setTimeout(() => {
+                titleToggle.style.transform = 'translateY(0)';
+            }, 100);
+            
+            // Reset transition
+            setTimeout(() => {
+                titleToggle.style.transition = '';
+            }, 600);
+        });
+    }
+    
     window.addEventListener("dragover", (event) => {
         if (!event.target.closest('.custom-file-upload')) return;
         event.preventDefault();
@@ -1180,8 +1203,20 @@ document.addEventListener('DOMContentLoaded', () => {
             connectButton.disabled = true;
             
             // Create and show a modal popup with dark theme styling
+            const modalCss = `
+                <style>
+                    #webSerialModal {
+                        z-index: 10002 !important; /* Higher than loading overlay and eyes */
+                    }
+                    .modal-backdrop {
+                        z-index: 10001 !important; /* Higher than eyes but below modal */
+                    }
+                </style>
+            `;
+            
             const modalHtml = `
-            <div class="modal fade" id="webSerialModal" tabindex="-1" aria-hidden="true">
+            ${modalCss}
+            <div class="modal fade" id="webSerialModal" tabindex="-1" aria-hidden="true" style="z-index: 10002;">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
