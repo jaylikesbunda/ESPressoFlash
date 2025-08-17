@@ -1326,6 +1326,7 @@ document.addEventListener('DOMContentLoaded', () => {
             "esp32c5-generic.zip": "Generic ESP32-C5",
             "esp32c5-generic-v01.zip": "Generic ESP32-C5 (v01)",
             "LilyGo-TDisplayS3-Touch.zip": "LilyGo TDisplay S3 Touch (ESP32-S3)",
+            "RabbitLabs_Minion.zip": "Rabbit Labs' Minion (ESP32)",
             "JCMK_DevBoardPro.zip": "JCMK DevBoard Pro (ESP32)"
         };
 
@@ -1370,7 +1371,8 @@ document.addEventListener('DOMContentLoaded', () => {
             "esp32c5-generic.zip": "esp32c5",
             "esp32c5-generic-v01.zip": "esp32c5",
             "LilyGo-TDisplayS3-Touch.zip": "esp32s3",
-            "JCMK_DevBoardPro.zip": "esp32"
+            "JCMK_DevBoardPro.zip": "esp32",
+            "RabbitLabs_Minion.zip": "esp32"
         };
 
         // --- Helper function to populate assets into a parent element ---
