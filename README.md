@@ -1,6 +1,7 @@
-# ESPressoFlash
+# ESPressoFlash.com
 
 A simple web flashing tool for ESP devices using WebSerial.
+
 
 ## Features
 
