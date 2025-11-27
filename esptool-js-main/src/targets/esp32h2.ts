@@ -1,10 +1,12 @@
 import { ESPLoader } from "../esploader.js";
-import { ROM } from "./rom.js";
+import { ESP32C6ROM } from "./esp32c6.js";
+import { MemoryMapEntry } from "./rom.js";
 
-export class ESP32H2ROM extends ROM {
+export class ESP32H2ROM extends ESP32C6ROM {
   public CHIP_NAME = "ESP32-H2";
   public IMAGE_CHIP_ID = 16;
-  public EFUSE_BASE = 0x60008800;
+  public EFUSE_BASE = 0x600b0800;
+  public EFUSE_BLOCK1_ADDR = this.EFUSE_BASE + 0x044;
   public MAC_EFUSE_REG = this.EFUSE_BASE + 0x044;
   public UART_CLKDIV_REG = 0x3ff40014;
   public UART_CLKDIV_MASK = 0xfffff;
@@ -12,14 +14,6 @@ export class ESP32H2ROM extends ROM {
 
   public FLASH_WRITE_SIZE = 0x400;
   public BOOTLOADER_FLASH_OFFSET = 0x0;
-
-  public FLASH_SIZES = {
-    "1MB": 0x00,
-    "2MB": 0x10,
-    "4MB": 0x20,
-    "8MB": 0x30,
-    "16MB": 0x40,
-  };
 
   public SPI_REG_BASE = 0x60002000;
   public SPI_USR_OFFS = 0x18;
@@ -33,12 +27,53 @@ export class ESP32H2ROM extends ROM {
   public UARTDEV_BUF_NO_USB = 3;
   public UARTDEV_BUF_NO = 0x3fcef14c;
 
-  public async getChipDescription(loader: ESPLoader) {
-    return this.CHIP_NAME;
+  IROM_MAP_START = 0x42000000;
+  IROM_MAP_END = 0x42800000;
+
+  public MEMORY_MAP: MemoryMapEntry[] = [
+    [0x00000000, 0x00010000, "PADDING"],
+    [0x42000000, 0x43000000, "DROM"],
+    [0x40800000, 0x40880000, "DRAM"],
+    [0x40800000, 0x40880000, "BYTE_ACCESSIBLE"],
+    [0x4004ac00, 0x40050000, "DROM_MASK"],
+    [0x40000000, 0x4004ac00, "IROM_MASK"],
+    [0x42000000, 0x43000000, "IROM"],
+    [0x40800000, 0x40880000, "IRAM"],
+    [0x50000000, 0x50004000, "RTC_IRAM"],
+    [0x50000000, 0x50004000, "RTC_DRAM"],
+    [0x600fe000, 0x60100000, "MEM_INTERNAL2"],
+  ];
+
+  public async getPkgVersion(loader: ESPLoader): Promise<number> {
+    const numWord = 4;
+    return ((await loader.readReg(this.EFUSE_BLOCK1_ADDR + 4 * numWord)) >> 0) & 0x07;
+  }
+
+  public async getMinorChipVersion(loader: ESPLoader): Promise<number> {
+    const numWord = 3;
+    return ((await loader.readReg(this.EFUSE_BLOCK1_ADDR + 4 * numWord)) >> 18) & 0x07;
+  }
+
+  public async getMajorChipVersion(loader: ESPLoader): Promise<number> {
+    const numWord = 3;
+    return ((await loader.readReg(this.EFUSE_BLOCK1_ADDR + 4 * numWord)) >> 21) & 0x03;
+  }
+
+  public async getChipDescription(loader: ESPLoader): Promise<string> {
+    const pkgVer = await this.getPkgVersion(loader);
+    let desc: string;
+    if (pkgVer === 0) {
+      desc = "ESP32-H2";
+    } else {
+      desc = "unknown ESP32-H2";
+    }
+    const majorRev = await this.getMajorChipVersion(loader);
+    const minorRev = await this.getMinorChipVersion(loader);
+    return `${desc} (revision v${majorRev}.${minorRev})`;
   }
 
   public async getChipFeatures(loader: ESPLoader) {
-    return ["BLE", "IEEE802.15.4"];
+    return ["BT 5 (LE)", "IEEE802.15.4", "Single Core", "96MHz"];
   }
 
   public async getCrystalFreq(loader: ESPLoader) {

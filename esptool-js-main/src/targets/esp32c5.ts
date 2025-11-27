@@ -1,5 +1,6 @@
 import { ESPLoader } from "../esploader";
 import { ESP32C6ROM } from "./esp32c6";
+import { MemoryMapEntry } from "./rom";
 
 export class ESP32C5ROM extends ESP32C6ROM {
   public CHIP_NAME = "ESP32-C5";
@@ -46,7 +47,7 @@ export class ESP32C5ROM extends ESP32C6ROM {
 
   public XTAL_CLK_DIVIDER = 1;
 
-  public UARTDEV_BUF_NO = 0x4085f51c; // Variable in ROM .bss which indicates the port in use
+  public UARTDEV_BUF_NO = 0x4085F514; // Variable in ROM .bss which indicates the port in use
 
   // Magic value for ESP32C5
   public CHIP_DETECT_MAGIC_VALUE = [0x1101406f, 0x63e1406f, 0x5fd1406f];
@@ -57,7 +58,7 @@ export class ESP32C5ROM extends ESP32C6ROM {
     "20m": 0x2,
   };
 
-  public MEMORY_MAP = [
+  public MEMORY_MAP: MemoryMapEntry[] = [
     [0x00000000, 0x00010000, "PADDING"],
     [0x42800000, 0x43000000, "DROM"],
     [0x40800000, 0x40860000, "DRAM"],
@@ -119,13 +120,7 @@ export class ESP32C5ROM extends ESP32C6ROM {
   }
 
   public async getChipFeatures(loader: ESPLoader): Promise<string[]> {
-    return [
-      "Wi-Fi 6 (dual-band)",
-      "BT 5 (LE)",
-      "IEEE802.15.4",
-      "Single Core + LP Core",
-      "240MHz",
-    ];
+    return ["Wi-Fi 6 (dual-band)", "BT 5 (LE)"];
   }
 
   public async getCrystalFreq(loader: ESPLoader): Promise<number> {
