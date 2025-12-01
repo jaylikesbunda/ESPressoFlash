@@ -1329,7 +1329,8 @@ document.addEventListener('DOMContentLoaded', () => {
             "RabbitLabs_Minion.zip": "Rabbit Labs' Minion (ESP32)",
             "JCMK_DevBoardPro.zip": "JCMK DevBoard Pro (ESP32)",
             "CardputerADV.zip": "Cardputer ADV (ESP32-S3)",
-            "Lolin_S3_Pro.zip": "Lolin S3 Pro (ESP32-S3)"
+            "Lolin_S3_Pro.zip": "Lolin S3 Pro (ESP32-S3)",
+            "Poltergeist.zip": "Rabbit-Labs Poltergeist"
         };
 
         // Mapping from build target (idf_target) to chip name used in 'selectedDevice'
@@ -1376,7 +1377,8 @@ document.addEventListener('DOMContentLoaded', () => {
             "JCMK_DevBoardPro.zip": "esp32",
             "RabbitLabs_Minion.zip": "esp32",
             "CardputerADV.zip": "esp32s3",
-            "Lolin_S3_Pro.zip": "esp32s3"
+            "Lolin_S3_Pro.zip": "esp32s3",
+            "Poltergeist.zip": "esp32c5"
         };
 
         // --- Helper function to populate assets into a parent element ---
