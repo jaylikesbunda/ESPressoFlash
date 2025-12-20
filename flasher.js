@@ -133,6 +133,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let currentStep = 1;
         let extractedGhostEspFiles = null;
         let selectedFirmwareMethod = null; // To track 'download' or 'manual'
+        let ghostEspReleaseType = 'stable'; // track if user wants stable or prerelease
+        let ghostEspStableReleases = null; // cache stable releases
+        let ghostEspPrereleases = null; // cache prereleases
 
         // --- Initial UI State ---
         if (appFileInfoElem) appFileInfoElem.textContent = 'No file selected';
@@ -1295,7 +1298,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Add a mapping for nice names (based on the provided YAML)
+        // add a mapping for nice names (based on the provided yaml)
         const ghostEspNiceNames = {
             "esp32-generic.zip": "Generic ESP32",
             "esp32-generic.zip": "FlipperHub Rocket",
@@ -1303,34 +1306,37 @@ document.addEventListener('DOMContentLoaded', () => {
             "esp32s3-generic.zip": "Generic ESP32-S3",
             "esp32c3-generic.zip": "Generic ESP32-C3",
             "esp32c6-generic.zip": "Generic ESP32-C6",
-            "esp32v5_awok.zip": "Awok V5 (ESP32-S2)",
-            "ghostboard.zip": "Rabbit Labs' GhostBoard (ESP32-C6)",
-            "MarauderV4_FlipperHub.zip": "Marauder V4 / FlipperHub (ESP32)",
-            "MarauderV6_AwokDual.zip": "Marauder V6 / Awok Dual (ESP32)",
-            "AwokMini.zip": "Awok Mini (ESP32-S2)",
-            "ESP32-S3-Cardputer.zip": "M5Stack Cardputer (ESP32-S3)",
-            "CYD2USB.zip": "CYD2USB (ESP32)",
-            "CYDMicroUSB.zip": "CYD MicroUSB (ESP32)",
-            "CYDDualUSB.zip": "CYD Dual USB (ESP32)",
-            "CYD2USB2.4Inch.zip": "CYD 2.4 Inch USB (ESP32)",
-            "CYD2USB2.4Inch_C.zip": "CYD 2.4 Inch USB-C (ESP32)",
-            "CYD2432S028R.zip": "CYD2432S028R (ESP32)",
-            "Waveshare_LCD.zip": "Waveshare 7\" LCD (ESP32-S3)",
-            "Crowtech_LCD.zip": "Crowtech 7\" LCD (ESP32-S3)",
-            "Sunton_LCD.zip": "Sunton 7\" LCD (ESP32-S3)",
-            "JC3248W535EN_LCD.zip": "JC3248W535EN LCD (ESP32-S3)",
+            "esp32c5-generic.zip": "Generic ESP32-C5",
+            "esp32c5-generic-v01.zip": "Generic ESP32-C5 v01",
+            "esp32v5_awok.zip": "Awok V5",
+            "ghostboard.zip": "Rabbit Labs' GhostBoard",
+            "MarauderV4_FlipperHub.zip": "Marauder V4 / FlipperHub",
+            "MarauderV6_AwokDual.zip": "Marauder V6 / Awok Dual",
+            "AwokMini.zip": "Awok Mini",
+            "ESP32-S3-Cardputer.zip": "M5Stack Cardputer",
+            "HeltecV3.zip": "Heltec V3",
+            "CYD2USB.zip": "CYD2USB",
+            "CYDMicroUSB.zip": "CYD MicroUSB",
+            "CYDDualUSB.zip": "CYD Dual USB",
+            "CYD2USB2.4Inch.zip": "CYD 2.4 Inch USB",
+            "CYD2USB2.4Inch_C.zip": "CYD 2.4 Inch USB-C",
+            "CYD2432S028R.zip": "CYD2432S028R",
+            "Waveshare_LCD.zip": "Waveshare 7\" LCD",
+            "Crowtech_LCD.zip": "Crowtech 7\" LCD",
+            "Sunton_LCD.zip": "Sunton 7\" LCD",
+            "JC3248W535EN_LCD.zip": "JC3248W535EN LCD",
             "Flipper_JCMK_GPS.zip": "Flipper Dev-Board w/ JCMK GPS",
             "LilyGo-T-Deck.zip": "LilyGo T-Deck",
             "LilyGo-TEmbedC1101.zip": "LilyGo TEmbedC1101",
             "LilyGo-S3TWatch-2020.zip": "LilyGo S3 T-Watch 2020",
-            "esp32c5-generic.zip": "Generic ESP32-C5",
-            "esp32c5-generic-v01.zip": "Generic ESP32-C5 (v01)",
-            "LilyGo-TDisplayS3-Touch.zip": "LilyGo TDisplay S3 Touch (ESP32-S3)",
-            "RabbitLabs_Minion.zip": "Rabbit Labs' Minion (ESP32)",
-            "JCMK_DevBoardPro.zip": "JCMK DevBoard Pro (ESP32)",
-            "CardputerADV.zip": "Cardputer ADV (ESP32-S3)",
-            "Lolin_S3_Pro.zip": "Lolin S3 Pro (ESP32-S3)",
-            "Poltergeist.zip": "Rabbit-Labs Poltergeist"
+            "LilyGo-TDisplayS3-Touch.zip": "LilyGo TDisplay S3 Touch",
+            "RabbitLabs_Minion.zip": "Rabbit Labs' Minion",
+            "JCMK_DevBoardPro.zip": "JCMK DevBoard Pro",
+            "CardputerADV.zip": "Cardputer ADV",
+            "Lolin_S3_Pro.zip": "Lolin S3 Pro",
+            "Poltergeist.zip": "Rabbit-Labs Poltergeist",
+            "Banshee_C5.zip": "Banshee C5",
+            "Banshee_S3.zip": "Banshee S3"
         };
 
         // Mapping from build target (idf_target) to chip name used in 'selectedDevice'
@@ -1350,6 +1356,8 @@ document.addEventListener('DOMContentLoaded', () => {
             "esp32s2-generic.zip": "esp32s2",
             "esp32s3-generic.zip": "esp32s3",
             "esp32c3-generic.zip": "esp32c3",
+            "esp32c5-generic.zip": "esp32c5",
+            "esp32c5-generic-v01.zip": "esp32c5",
             "esp32c6-generic.zip": "esp32c6",
             "esp32v5_awok.zip": "esp32s2",
             "ghostboard.zip": "esp32c6",
@@ -1357,6 +1365,7 @@ document.addEventListener('DOMContentLoaded', () => {
             "MarauderV6_AwokDual.zip": "esp32",
             "AwokMini.zip": "esp32s2",
             "ESP32-S3-Cardputer.zip": "esp32s3",
+            "HeltecV3.zip": "esp32s3",
             "CYD2USB.zip": "esp32",
             "CYDMicroUSB.zip": "esp32",
             "CYDDualUSB.zip": "esp32",
@@ -1371,14 +1380,14 @@ document.addEventListener('DOMContentLoaded', () => {
             "LilyGo-T-Deck.zip": "esp32s3",
             "LilyGo-TEmbedC1101.zip": "esp32s3",
             "LilyGo-S3TWatch-2020.zip": "esp32s3",
-            "esp32c5-generic.zip": "esp32c5",
-            "esp32c5-generic-v01.zip": "esp32c5",
             "LilyGo-TDisplayS3-Touch.zip": "esp32s3",
             "JCMK_DevBoardPro.zip": "esp32",
             "RabbitLabs_Minion.zip": "esp32",
             "CardputerADV.zip": "esp32s3",
             "Lolin_S3_Pro.zip": "esp32s3",
-            "Poltergeist.zip": "esp32c5"
+            "Poltergeist.zip": "esp32c5",
+            "Banshee_C5.zip": "esp32c5",
+            "Banshee_S3.zip": "esp32s3"
         };
 
         // --- Helper function to populate assets into a parent element ---
@@ -1475,7 +1484,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                // Find the latest stable and pre-release
+                // find the latest stable and pre-release
                 let latestStableRelease = null;
                 let latestPrerelease = null;
                 for (const release of releases) {
@@ -1485,13 +1494,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (release.prerelease && !latestPrerelease) {
                         latestPrerelease = release;
                     }
-                     // Optimization: stop if we found both
+                     // optimization: stop if we found both
                      if (latestStableRelease && latestPrerelease) break; 
                 }
 
                 let optionsAdded = false;
 
-                // Populate Stable Release
+                // populate stable release
                 if (latestStableRelease) {
                     const stableOptgroup = document.createElement('optgroup');
                     stableOptgroup.label = `Stable Release (${latestStableRelease.tag_name})`;
@@ -1506,7 +1515,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     espLoaderTerminal.writeLine(`No stable release found for ${owner}/${repo}.`);
                 }
 
-                // Populate Pre-release
+                // populate pre-release
                 if (latestPrerelease) {
                     const prereleaseOptgroup = document.createElement('optgroup');
                     prereleaseOptgroup.label = `Pre-release (${latestPrerelease.tag_name})`;
@@ -1540,6 +1549,68 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // new function to populate ghostesp dropdown based on toggle state
+        async function populateGhostEspDropdown(owner, repo, fileExtension = '.zip', filterChip = null) {
+            const selectElement = ghostEspVariantSelect;
+            if (!selectElement) {
+                console.error('GhostESP select element not found');
+                return;
+            }
+
+            selectElement.innerHTML = `<option value="">Select a build...</option>`;
+            selectElement.disabled = true;
+
+            try {
+                // only fetch if we don't have cached data
+                if (!ghostEspStableReleases && !ghostEspPrereleases) {
+                    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases`;
+                    espLoaderTerminal.writeLine(`Fetching releases from ${owner}/${repo}...`);
+                    const response = await fetch(apiUrl);
+                    if (!response.ok) {
+                        throw new Error(`GitHub API Error: ${response.status} ${response.statusText}`);
+                    }
+                    const releases = await response.json();
+                    if (!releases || releases.length === 0) {
+                        espLoaderTerminal.writeLine(`⚠️ No releases found for ${owner}/${repo}.`);
+                        selectElement.innerHTML = `<option value="">No releases found</option>`;
+                        return;
+                    }
+
+                    // find and cache the latest stable and pre-release
+                    for (const release of releases) {
+                        if (!release.prerelease && !ghostEspStableReleases) {
+                            ghostEspStableReleases = release;
+                        }
+                        if (release.prerelease && !ghostEspPrereleases) {
+                            ghostEspPrereleases = release;
+                        }
+                        if (ghostEspStableReleases && ghostEspPrereleases) break;
+                    }
+                }
+
+                // populate based on current toggle state
+                const targetRelease = ghostEspReleaseType === 'stable' ? ghostEspStableReleases : ghostEspPrereleases;
+                
+                if (targetRelease) {
+                    if (populateAssets(targetRelease.assets, selectElement, fileExtension, filterChip, repo)) {
+                        selectElement.disabled = false;
+                        espLoaderTerminal.writeLine(`Loaded ${ghostEspReleaseType} release: ${targetRelease.tag_name}`);
+                    } else {
+                        espLoaderTerminal.writeLine(`${ghostEspReleaseType} release ${targetRelease.tag_name} found, but no matching assets.`);
+                        selectElement.innerHTML = `<option value="">No matching assets found</option>`;
+                    }
+                } else {
+                    espLoaderTerminal.writeLine(`No ${ghostEspReleaseType} release found for ${owner}/${repo}.`);
+                    selectElement.innerHTML = `<option value="">No ${ghostEspReleaseType} release found</option>`;
+                }
+
+            } catch (error) {
+                console.error(`Error fetching ${repo} data:`, error);
+                espLoaderTerminal.writeLine(`⚠️ Failed to fetch ${repo} list: ${error.message}`);
+                selectElement.innerHTML = `<option value="">Error loading options</option>`;
+            }
+        }
+
         // --- NEW FUNCTION: Load and process GhostESP ZIP ---
         async function loadGhostEspZip(zipUrl) {
             console.log(`[Debug] loadGhostEspZip called with original URL: ${zipUrl}`); // Log original URL
@@ -1558,7 +1629,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(`[Debug] Using CF Worker proxy URL: ${proxyUrl}`); // Log proxy URL
             espLoaderTerminal.writeLine(`Fetching GhostESP firmware via proxy from ${zipUrl}...`);
             
-            if (ghostEspVariantSelect) ghostEspVariantSelect.disabled = true; 
+            if (ghostEspVariantSelect) ghostEspVariantSelect.disabled = true;
 
             extractedGhostEspFiles = null; 
 
@@ -1685,32 +1756,29 @@ document.addEventListener('DOMContentLoaded', () => {
                  document.querySelectorAll('.custom-file-upload.file-uploaded').forEach(el => el.classList.remove('file-uploaded'));
                  updateBinaryTypeIndicators(); // Clear badges on error
             } finally {
-                console.log('[Debug] loadGhostEspZip: Finally block reached. Re-enabling select.'); 
-                 if (ghostEspVariantSelect) ghostEspVariantSelect.disabled = false; 
-                updateButtonStates(); 
+                console.log('[Debug] loadGhostEspZip: Finally block reached. Re-enabling select.');
+                 if (ghostEspVariantSelect) ghostEspVariantSelect.disabled = false;
+                updateButtonStates();
             }
         }
 
         // --- Modify setupDownloadLinkListener to handle the GhostESP case ---
         function setupDownloadLinkListener(selectElement, linkElement) {
-            if (selectElement && linkElement) {
+            if (selectElement) {
                 selectElement.addEventListener('change', () => {
                     const selectedValue = selectElement.value;
-                    console.log(`[Debug] Select changed for ID: ${selectElement.id}, Value: ${selectedValue}`); // <<< ADD LOG
+                    console.log(`[Debug] Select changed for ID: ${selectElement.id}, Value: ${selectedValue}`);
 
-                    // --- GhostESP Special Handling ---
+                    // ghostesp special handling
                     if (selectElement.id === 'ghostEspVariantSelect') {
-                        console.log('[Debug] GhostESP variant selected, attempting load...'); // <<< ADD LOG
-                        linkElement.href = '#'; // Keep link disabled for GhostESP
-                        linkElement.classList.add('disabled');
-                        linkElement.classList.replace('btn-primary', 'btn-secondary');
+                        console.log('[Debug] GhostESP variant selected, attempting load...');
                         
-                        // Trigger the load function
+                        // trigger the load function
                         loadGhostEspZip(selectedValue); 
                     
-                    // --- Default Handling (Marauder, etc.) ---
-                    } else {
-                        console.log('[Debug] Non-GhostESP select changed.'); // <<< ADD LOG
+                    // default handling (marauder, etc.)
+                    } else if (linkElement) {
+                        console.log('[Debug] Non-GhostESP select changed.');
                         if (selectedValue) {
                             linkElement.href = selectedValue;
                         linkElement.classList.remove('disabled');
@@ -1723,14 +1791,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             } else {
-                 console.error(`[Debug] setupDownloadLinkListener: Missing selectElement or linkElement for ID: ${selectElement?.id}`); // <<< ADD ERROR LOG
+                 console.error(`[Debug] setupDownloadLinkListener: Missing selectElement for ID: ${selectElement?.id}`);
             }
         }
 
-        // --- Remove the early call for GhostESP ---
-        // setupDownloadLinkListener(ghostEspVariantSelect, ghostEspDownloadLink); 
+        // setup listener for ghostesp dropdown
+        setupDownloadLinkListener(ghostEspVariantSelect, null);
         
-        // Keep the early call for Marauder as its section might be simpler
+        // keep the early call for marauder as its section might be simpler
         setupDownloadLinkListener(marauderVariantSelect, marauderDownloadLink); 
 
         // --- THIS BLOCK IS THE CULPRIT - Commenting it out ---
@@ -1767,17 +1835,11 @@ document.addEventListener('DOMContentLoaded', () => {
                      console.log('[Debug] Source is manual, showing manual section.'); // <<< ADD LOG
                     manualUploadSection.classList.remove('d-none');
                 } else if (selectedSource === 'ghostesp') {
-                     console.log('[Debug] Source is ghostesp, showing section and populating options...'); // <<< ADD LOG
+                     console.log('[Debug] Source is ghostesp, showing section and populating options...');
                     ghostEspDownloadSection?.classList.remove('d-none');
-                    populateRepoOptions('Spooks4576', 'Ghost_ESP', 'ghostEspVariantSelect', '.zip', '-- Select a GhostESP ZIP... --', selectedDevice)
-                        .then(() => {
-                            // --- Move GhostESP Listener Setup Here ---
-                            console.log('[Debug] Populated GhostESP options, now setting up listener.'); // <<< ADD LOG
-                            setupDownloadLinkListener(ghostEspVariantSelect, ghostEspDownloadLink); 
-                            // Note: GhostESP download link is now unused / kept disabled by setupDownloadLinkListener
-                        })
+                    populateGhostEspDropdown('Spooks4576', 'Ghost_ESP', '.zip', selectedDevice)
                         .catch(err => {
-                            console.error('[Debug] Error during populateRepoOptions for GhostESP:', err); // <<< ADD LOG
+                            console.error('[Debug] Error during populateGhostEspDropdown:', err);
                         });
                 } else if (selectedSource === 'marauder') {
                      console.log('[Debug] Source is marauder, showing section and populating options...'); // <<< ADD LOG
@@ -1878,9 +1940,9 @@ document.addEventListener('DOMContentLoaded', () => {
         function selectFirmwareMethod(method) {
             selectedFirmwareMethod = method;
 
-            // Update card appearance
-            choiceDownloadCard?.classList.toggle('selected', method === 'download');
-            choiceManualCard?.classList.toggle('selected', method === 'manual');
+            // Update button appearance
+            choiceDownloadCard?.classList.toggle('active', method === 'download');
+            choiceManualCard?.classList.toggle('active', method === 'manual');
 
             // Show/hide relevant containers
             downloadOptionsContainer?.classList.toggle('d-none', method !== 'download');
@@ -1889,23 +1951,23 @@ document.addEventListener('DOMContentLoaded', () => {
             // Reset state if switching
             if (method === 'download') {
                 clearManualInputs(); 
-                // Reset download source dropdown if needed
                  if (downloadSourceSelect) downloadSourceSelect.value = ''; 
                  ghostEspDownloadSection?.classList.add('d-none');
                  marauderDownloadSection?.classList.add('d-none');
-            } else { // method === 'manual'
+            } else {
                 clearExtractedData();
-                // Reset download source dropdown to avoid confusion
                  if (downloadSourceSelect) downloadSourceSelect.value = ''; 
                  ghostEspDownloadSection?.classList.add('d-none');
                  marauderDownloadSection?.classList.add('d-none');
-                 // Maybe auto-select the 'app' toggle?
                  document.querySelector('.binary-type-toggle .btn[data-binary="app"]')?.click();
             }
             
-            updateFlashSummary(); // Update summary based on new state
-            updateButtonStates(); // Update buttons
+            updateFlashSummary();
+            updateButtonStates();
         }
+        
+        // Initialize with download selected by default
+        selectFirmwareMethod('download');
 
         // --- NEW: Event Listener for Download Source Selection ---
         if (downloadSourceSelect) {
@@ -1925,11 +1987,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (selectedSource === 'ghostesp') {
                     console.log('[Debug] Showing GhostESP section and populating options...');
                     ghostEspDownloadSection?.classList.remove('d-none');
-                    populateRepoOptions('jaylikesbunda', 'Ghost_ESP', 'ghostEspVariantSelect', '.zip', '-- Select GhostESP Build --', selectedDevice)
-                        .then(() => {
-                            console.log('[Debug] Populated GhostESP options, setting up listener.');
-                            setupDownloadLinkListener(ghostEspVariantSelect, null); // Pass null instead of undefined ghostEspDownloadLink
-                        })
+                    populateGhostEspDropdown('jaylikesbunda', 'Ghost_ESP', '.zip', selectedDevice)
                         .catch(err => {
                             console.error('[Debug] Error populating GhostESP options:', err);
                             if (ghostEspStatusElem) {
@@ -1955,6 +2013,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateButtonStates();
             });
         }
+
+        // --- Event Listeners for GhostESP Release Toggle ---
+        const releaseToggleBtns = document.querySelectorAll('.release-toggle-btn');
+        releaseToggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const releaseType = btn.getAttribute('data-release');
+                console.log(`[Debug] Release toggle clicked: ${releaseType}`);
+                
+                // update toggle button states
+                releaseToggleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // update global state
+                ghostEspReleaseType = releaseType;
+                
+                // clear current selection
+                if (ghostEspVariantSelect) {
+                    ghostEspVariantSelect.selectedIndex = 0;
+                }
+                
+                // clear extracted data when switching
+                clearExtractedData();
+                
+                // repopulate dropdown with new release type
+                if (ghostEspDownloadSection && !ghostEspDownloadSection.classList.contains('d-none')) {
+                    populateGhostEspDropdown('jaylikesbunda', 'Ghost_ESP', '.zip', selectedDevice)
+                        .catch(err => {
+                            console.error('[Debug] Error repopulating GhostESP after toggle:', err);
+                        });
+                }
+            });
+        });
 
 
         // --- Modify loadGhostEspZip to update status element ---
@@ -2088,9 +2178,9 @@ document.addEventListener('DOMContentLoaded', () => {
                  document.querySelectorAll('.custom-file-upload.file-uploaded').forEach(el => el.classList.remove('file-uploaded'));
                  updateBinaryTypeIndicators(); // Clear badges on error
             } finally {
-                console.log('[Debug] loadGhostEspZip: Finally block reached. Re-enabling select.'); 
-                 if (ghostEspVariantSelect) ghostEspVariantSelect.disabled = false; 
-                updateButtonStates(); 
+                console.log('[Debug] loadGhostEspZip: Finally block reached. Re-enabling select.');
+                 if (ghostEspVariantSelect) ghostEspVariantSelect.disabled = false;
+                updateButtonStates();
             }
         }
 
