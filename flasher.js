@@ -1335,8 +1335,8 @@ document.addEventListener('DOMContentLoaded', () => {
             "CardputerADV.zip": "Cardputer ADV",
             "Lolin_S3_Pro.zip": "Lolin S3 Pro",
             "Poltergeist.zip": "Rabbit-Labs Poltergeist",
-            "Banshee_C5.zip": "Banshee C5",
-            "Banshee_S3.zip": "Banshee S3"
+            "Banshee_C5.zip": "The Wired Hatter's Banshee C5",
+            "Banshee_S3.zip": "The Wired Hatter's Banshee S3"
         };
 
         // Mapping from build target (idf_target) to chip name used in 'selectedDevice'
