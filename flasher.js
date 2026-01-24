@@ -111,9 +111,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // const firmwareSourceSelect = getElementById('firmwareSourceSelect'); // No longer used directly
         const ghostEspDownloadSection = getElementById('ghostEspDownloadSection');
         const marauderDownloadSection = getElementById('marauderDownloadSection');
-        const manualUploadSection = getElementById('manualUploadSection');
+        const pwnpowerDownloadSection = getElementById('pwnpowerDownloadSection');
         const ghostEspVariantSelect = getElementById('ghostEspVariantSelect');
         const marauderVariantSelect = getElementById('marauderVariantSelect');
+        const pwnpowerVariantSelect = getElementById('pwnpowerVariantSelect');
         const marauderDownloadLink = getElementById('marauderDownloadLink');
         const disableFilterToggle = getElementById('disableFilterToggle');
         const choiceDownloadCard = getElementById('choiceDownload');
@@ -122,6 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const manualUploadContainer = getElementById('manualUploadContainer');
         const downloadSourceSelect = getElementById('downloadSourceSelect');
         const ghostEspStatusElem = getElementById('ghostEspStatus');
+        const pwnpowerStatusElem = getElementById('pwnpowerStatus');
+        const projectRepoLink = getElementById('projectRepoLink');
 
         // --- Let Declarations (Moved Up) ---
         let espLoader = null;
@@ -132,10 +135,14 @@ document.addEventListener('DOMContentLoaded', () => {
         let selectedSide = '';
         let currentStep = 1;
         let extractedGhostEspFiles = null;
+        let extractedPwnPowerFiles = null;
         let selectedFirmwareMethod = null; // To track 'download' or 'manual'
         let ghostEspReleaseType = 'stable'; // track if user wants stable or prerelease
         let ghostEspStableReleases = null; // cache stable releases
         let ghostEspPrereleases = null; // cache prereleases
+        let pwnpowerReleaseType = 'stable'; // track if user wants stable or prerelease for PwnPower
+        let pwnpowerStableReleases = null; // cache stable releases for PwnPower
+        let pwnpowerPrereleases = null; // cache prereleases for PwnPower
 
         // --- Initial UI State ---
         if (appFileInfoElem) appFileInfoElem.textContent = 'No file selected';
@@ -545,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Check based on the *selected method*
             if (selectedFirmwareMethod === 'download' && extractedGhostEspFiles) {
-                // Use extracted GhostESP data 
+                // Use extracted GhostESP data
                  if (extractedGhostEspFiles.app.data) {
                      const address = extractedGhostEspFiles.app.addressInput.value;
                      addSummaryItem('bi-file-earmark-binary', `Application: ${extractedGhostEspFiles.app.name} at ${address} [Auto]`);
@@ -559,6 +566,23 @@ document.addEventListener('DOMContentLoaded', () => {
                  if (extractedGhostEspFiles.partition.data) {
                      const address = extractedGhostEspFiles.partition.addressInput.value;
                      addSummaryItem('bi-table', `Partition Table: ${extractedGhostEspFiles.partition.name} at ${address} [Auto]`);
+                     hasBinaries = true;
+                 }
+            } else if (selectedFirmwareMethod === 'download' && extractedPwnPowerFiles) {
+                // Use extracted PwnPower data
+                 if (extractedPwnPowerFiles.app.data) {
+                     const address = extractedPwnPowerFiles.app.address;
+                     addSummaryItem('bi-file-earmark-binary', `Application: ${extractedPwnPowerFiles.app.name} at ${address} [Auto]`);
+                     hasBinaries = true;
+                 }
+                 if (extractedPwnPowerFiles.bootloader.data) {
+                     const address = extractedPwnPowerFiles.bootloader.address;
+                     addSummaryItem('bi-hdd-network', `Bootloader: ${extractedPwnPowerFiles.bootloader.name} at ${address} [Auto]`);
+                     hasBinaries = true;
+                 }
+                 if (extractedPwnPowerFiles.partition.data) {
+                     const address = extractedPwnPowerFiles.partition.address;
+                     addSummaryItem('bi-table', `Partition Table: ${extractedPwnPowerFiles.partition.name} at ${address} [Auto]`);
                      hasBinaries = true;
                  }
             } else if (selectedFirmwareMethod === 'manual') {
@@ -603,8 +627,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
              // Check based on the *selected method*
              if (selectedFirmwareMethod === 'download') {
-                 // If download was chosen, check if Ghost files were extracted
-                 return extractedGhostEspFiles && (extractedGhostEspFiles.app.data || extractedGhostEspFiles.bootloader.data || extractedGhostEspFiles.partition.data);
+                 // If download was chosen, check if Ghost or PwnPower files were extracted
+                 return (extractedGhostEspFiles && (extractedGhostEspFiles.app.data || extractedGhostEspFiles.bootloader.data || extractedGhostEspFiles.partition.data)) ||
+                        (extractedPwnPowerFiles && (extractedPwnPowerFiles.app.data || extractedPwnPowerFiles.bootloader.data || extractedPwnPowerFiles.partition.data));
              } else if (selectedFirmwareMethod === 'manual') {
                  // Original check for manual files
                  return (appFileInput?.files?.length > 0) ||
@@ -809,10 +834,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateStatusIndicator('flashing', 'Processing files...', '');
 
                 const fileArray = [];
-                const source = selectedFirmwareMethod === 'download' ? 'ghostesp' : 'manual';
+                const source = selectedFirmwareMethod === 'download' ? 'download' : 'manual';
 
                 // --- Use extracted GhostESP data if available ---
-                if (source === 'ghostesp' && extractedGhostEspFiles) {
+                if (source === 'download' && extractedGhostEspFiles) {
                     espLoaderTerminal.writeLine("Using auto-loaded GhostESP files...");
                     for (const key in extractedGhostEspFiles) {
                         const fileInfo = extractedGhostEspFiles[key];
@@ -824,12 +849,36 @@ document.addEventListener('DOMContentLoaded', () => {
                             for (let i = 0; i < uint8Data.length; i++) {
                                 binaryString += String.fromCharCode(uint8Data[i]);
                             }
-                            
+
                             fileArray.push({
                                 data: binaryString,
                                 address: flashAddress,
                                 name: fileInfo.name, // Store name for progress reporting
                                 type: fileInfo.type // Store type for offset check
+                            });
+                             espLoaderTerminal.writeLine(`Prepared ${fileInfo.name} for address 0x${flashAddress.toString(16)}`);
+                        }
+                    }
+                }
+                // --- Use extracted PwnPower data if available ---
+                else if (source === 'download' && extractedPwnPowerFiles) {
+                    espLoaderTerminal.writeLine("Using auto-loaded PwnPower files...");
+                    for (const key in extractedPwnPowerFiles) {
+                        const fileInfo = extractedPwnPowerFiles[key];
+                        if (fileInfo.data) {
+                            const flashAddress = parseInt(fileInfo.address, 16);
+                            // Convert ArrayBuffer to the binary string esptool.js expects
+                            const uint8Data = new Uint8Array(fileInfo.data);
+                            let binaryString = '';
+                            for (let i = 0; i < uint8Data.length; i++) {
+                                binaryString += String.fromCharCode(uint8Data[i]);
+                            }
+
+                            fileArray.push({
+                                data: binaryString,
+                                address: flashAddress,
+                                name: fileInfo.name, // Store name for progress reporting
+                                type: key.charAt(0).toUpperCase() + key.slice(1) // Convert 'app' -> 'App', etc.
                             });
                              espLoaderTerminal.writeLine(`Prepared ${fileInfo.name} for address 0x${flashAddress.toString(16)}`);
                         }
@@ -1611,6 +1660,108 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // --- PwnPower function to populate dropdown based on toggle state ---
+        async function populatePwnPowerDropdown(owner, repo, fileExtension = '.zip', filterChip = null) {
+            const selectElement = pwnpowerVariantSelect;
+            if (!selectElement) {
+                console.error('PwnPower select element not found');
+                return;
+            }
+
+            selectElement.innerHTML = `<option value="">Select a target...</option>`;
+            selectElement.disabled = true;
+
+            try {
+                // only fetch if we don't have cached data
+                if (!pwnpowerStableReleases && !pwnpowerPrereleases) {
+                    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases`;
+                    espLoaderTerminal.writeLine(`Fetching releases from ${owner}/${repo}...`);
+                    const response = await fetch(apiUrl);
+                    if (!response.ok) {
+                        throw new Error(`GitHub API Error: ${response.status} ${response.statusText}`);
+                    }
+                    const releases = await response.json();
+                    if (!releases || releases.length === 0) {
+                        espLoaderTerminal.writeLine(`⚠️ No releases found for ${owner}/${repo}.`);
+                        selectElement.innerHTML = `<option value="">No releases found</option>`;
+                        return;
+                    }
+
+                    // find and cache the latest stable and pre-release
+                    for (const release of releases) {
+                        if (!release.prerelease && !pwnpowerStableReleases) {
+                            pwnpowerStableReleases = release;
+                        }
+                        if (release.prerelease && !pwnpowerPrereleases) {
+                            pwnpowerPrereleases = release;
+                        }
+                        if (pwnpowerStableReleases && pwnpowerPrereleases) break;
+                    }
+                }
+
+                // populate based on current toggle state
+                const targetRelease = pwnpowerReleaseType === 'stable' ? pwnpowerStableReleases : pwnpowerPrereleases;
+
+                if (targetRelease) {
+                    // PwnPower has specific naming: pwnpower-esp32c3.zip and pwnpower-esp32c5.zip
+                    const assets = targetRelease.assets || [];
+                    let foundAssets = false;
+
+                    console.log(`[Debug] PwnPower: Found ${assets.length} assets in release ${targetRelease.tag_name}`);
+                    assets.forEach(asset => {
+                        console.log(`[Debug] PwnPower: Checking asset: ${asset.name}`);
+
+                        // Match both pwnpower-esp32c3.zip and pwnpower-esp32c5.zip
+                        if (asset.name.startsWith('pwnpower-') && asset.name.endsWith('.zip')) {
+                            console.log(`[Debug] PwnPower: Asset matches pwnpower-*.zip pattern: ${asset.name}`);
+
+                            // Extract target from filename: pwnpower-esp32c3.zip -> ESP32-C3
+                            const match = asset.name.match(/pwnpower-(esp32[a-z0-9]+)\.zip/i);
+                            console.log(`[Debug] PwnPower: Regex match result:`, match);
+
+                            if (match) {
+                                const chipTarget = match[1].toUpperCase();
+                                // ESP32C3 -> ESP32-C3 (insert hyphen between letter and digit at the end)
+                                // Match pattern: ESP32C3 or ESP32C5 -> ESP32-C3, ESP32-C5
+                                const formattedName = chipTarget.replace(/([A-Z])(\d+)$/, '-$1$2');
+                                console.log(`[Debug] PwnPower: Formatted name: ${formattedName}`);
+
+                                // Filter by selected chip if needed
+                                if (filterChip && formattedName.toLowerCase() !== filterChip.toLowerCase()) {
+                                    console.log(`[Debug] PwnPower: Skipping ${formattedName} (filter: ${filterChip})`);
+                                    return; // Skip this asset
+                                }
+
+                                const option = document.createElement('option');
+                                option.value = asset.browser_download_url;
+                                option.textContent = `${targetRelease.tag_name} (${formattedName})`;
+                                option.dataset.target = formattedName.toLowerCase();
+                                selectElement.appendChild(option);
+                                foundAssets = true;
+                                console.log(`[Debug] PwnPower: Added option for ${formattedName}`);
+                            }
+                        }
+                    });
+
+                    if (foundAssets) {
+                        selectElement.disabled = false;
+                        espLoaderTerminal.writeLine(`Loaded ${pwnpowerReleaseType} release: ${targetRelease.tag_name}`);
+                    } else {
+                        espLoaderTerminal.writeLine(`${pwnpowerReleaseType} release ${targetRelease.tag_name} found, but no matching PwnPower assets.`);
+                        selectElement.innerHTML = `<option value="">No matching assets found</option>`;
+                    }
+                } else {
+                    espLoaderTerminal.writeLine(`No ${pwnpowerReleaseType} release found for ${owner}/${repo}.`);
+                    selectElement.innerHTML = `<option value="">No ${pwnpowerReleaseType} release found</option>`;
+                }
+
+            } catch (error) {
+                console.error(`Error fetching ${repo} data:`, error);
+                espLoaderTerminal.writeLine(`⚠️ Failed to fetch ${repo} list: ${error.message}`);
+                selectElement.innerHTML = `<option value="">Error loading options</option>`;
+            }
+        }
+
         // --- NEW FUNCTION: Load and process GhostESP ZIP ---
         async function loadGhostEspZip(zipUrl) {
             console.log(`[Debug] loadGhostEspZip called with original URL: ${zipUrl}`); // Log original URL
@@ -1762,6 +1913,150 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // --- NEW FUNCTION: Load and process PwnPower ZIP ---
+        async function loadPwnPowerZip(zipUrl) {
+            console.log(`[Debug] loadPwnPowerZip called with original URL: ${zipUrl}`);
+            if (!zipUrl) {
+                console.log('[Debug] loadPwnPowerZip: No URL provided, clearing data.');
+                extractedPwnPowerFiles = null;
+                updateBinaryTypeIndicators();
+                updateFlashSummary();
+                updateButtonStates();
+                if (pwnpowerStatusElem) {
+                    pwnpowerStatusElem.textContent = 'Select a target to begin loading firmware files.';
+                    pwnpowerStatusElem.className = 'form-text text-muted mt-2';
+                }
+                return;
+            }
+
+            // Update Status UI
+            if (pwnpowerStatusElem) {
+                pwnpowerStatusElem.textContent = 'Fetching ZIP from GitHub...';
+                pwnpowerStatusElem.className = 'form-text mt-2 loading';
+            }
+
+            const proxyUrl = `https://fragrant-flower-ba0b.creepersbeast.workers.dev/?url=${encodeURIComponent(zipUrl)}`;
+            console.log(`[Debug] Using CF Worker proxy URL: ${proxyUrl}`);
+            espLoaderTerminal.writeLine(`Fetching PwnPower firmware via proxy from ${zipUrl}...`);
+
+            if (pwnpowerVariantSelect) pwnpowerVariantSelect.disabled = true;
+            extractedPwnPowerFiles = null;
+
+            try {
+                console.log('[Debug] loadPwnPowerZip: Starting fetch via proxy...');
+                const response = await fetch(proxyUrl);
+                console.log(`[Debug] loadPwnPowerZip: Fetch response status: ${response.status}, ok: ${response.ok}`);
+
+                if (!response.ok) {
+                    let proxyErrorDetails = `Proxy fetch failed with status: ${response.status}`;
+                    try {
+                        const errorText = await response.text();
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            if (errorJson.contents && errorJson.status?.http_code) {
+                                proxyErrorDetails = `Proxied request failed: ${errorJson.status.http_code}. ${errorJson.contents}`;
+                            } else {
+                                proxyErrorDetails = errorText.substring(0, 200);
+                            }
+                        } catch (_) {
+                            proxyErrorDetails = errorText.substring(0, 200);
+                        }
+                    } catch (_) {}
+                    throw new Error(proxyErrorDetails);
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+                console.log(`[Debug] loadPwnPowerZip: ArrayBuffer size: ${arrayBuffer.byteLength} bytes`);
+
+                if (pwnpowerStatusElem) {
+                    pwnpowerStatusElem.textContent = 'Extracting firmware files...';
+                }
+                espLoaderTerminal.writeLine("Extracting PwnPower firmware files from ZIP...");
+
+                const zip = await JSZip.loadAsync(arrayBuffer);
+                console.log('[Debug] loadPwnPowerZip: ZIP loaded successfully');
+
+                // PwnPower uses OTA layout with specific file names
+                const filesToExtract = {
+                    app: { name: 'firmware.bin', data: null, address: '0x20000' },      // OTA partition
+                    bootloader: { name: 'bootloader.bin', data: null, address: '0x0' },
+                    partition: { name: 'partitions.bin', data: null, address: '0x8000' }
+                };
+
+                let foundCount = 0;
+                for (const [key, fileInfo] of Object.entries(filesToExtract)) {
+                    const file = zip.file(fileInfo.name);
+                    if (file) {
+                        console.log(`[Debug] loadPwnPowerZip: Found ${fileInfo.name}`);
+                        const data = await file.async('uint8array');
+                        fileInfo.data = data;
+                        foundCount++;
+                        espLoaderTerminal.writeLine(`✓ Extracted ${fileInfo.name} (${Math.round(data.length / 1024)} KB)`);
+                    } else {
+                        console.log(`[Debug] loadPwnPowerZip: ${fileInfo.name} not found in ZIP`);
+                    }
+                }
+
+                if (foundCount > 0) {
+                    extractedPwnPowerFiles = filesToExtract;
+                    espLoaderTerminal.writeLine("Extraction complete. Files ready.");
+
+                    // Auto-set flash size based on target chip
+                    const selectedOption = pwnpowerVariantSelect.options[pwnpowerVariantSelect.selectedIndex];
+                    const targetChip = selectedOption?.dataset?.target || '';
+
+                    if (flashSizeSelect) {
+                        if (targetChip.includes('c5')) {
+                            flashSizeSelect.value = '8MB';
+                            espLoaderTerminal.writeLine("Auto-set flash size to 8MB for ESP32-C5");
+                        } else if (targetChip.includes('c3')) {
+                            flashSizeSelect.value = '4MB';
+                            espLoaderTerminal.writeLine("Auto-set flash size to 4MB for ESP32-C3");
+                        }
+                    }
+
+                    // Update offsets for OTA layout
+                    if (appAddressInput) appAddressInput.value = '0x20000';
+                    if (bootloaderAddressInput) bootloaderAddressInput.value = '0x0';
+                    if (partitionAddressInput) partitionAddressInput.value = '0x8000';
+
+                    if (pwnpowerStatusElem) {
+                        pwnpowerStatusElem.textContent = `✓ Ready to flash ${foundCount} file(s)`;
+                        pwnpowerStatusElem.className = 'form-text text-success mt-2 success';
+                    }
+
+                    updateBinaryTypeIndicators();
+                    updateFlashSummary();
+                } else {
+                    clearExtractedData();
+                    updateFlashSummary();
+                    if (pwnpowerStatusElem) {
+                        pwnpowerStatusElem.textContent = 'Error: No required .bin files found in ZIP.';
+                        pwnpowerStatusElem.className = 'form-text text-danger mt-2 error';
+                    }
+                    throw new Error("No required .bin files found in the downloaded ZIP.");
+                }
+
+            } catch (error) {
+                console.error("[Debug] Error loading or extracting PwnPower ZIP:", error);
+                espLoaderTerminal.writeLine(`❌ Error processing PwnPower ZIP: ${error.message}`);
+                if (pwnpowerStatusElem) {
+                    pwnpowerStatusElem.textContent = `Error: ${error.message}`;
+                    pwnpowerStatusElem.className = 'form-text text-danger mt-2 error';
+                }
+                extractedPwnPowerFiles = null;
+                if (appFileInfoElem) appFileInfoElem.textContent = 'ZIP Load Failed';
+                if (bootloaderFileInfoElem) bootloaderFileInfoElem.textContent = 'ZIP Load Failed';
+                if (partitionFileInfoElem) partitionFileInfoElem.textContent = 'ZIP Load Failed';
+                document.querySelectorAll('.custom-file-upload.file-uploaded').forEach(el => el.classList.remove('file-uploaded'));
+                updateBinaryTypeIndicators();
+            } finally {
+                console.log('[Debug] loadPwnPowerZip: Finally block reached. Re-enabling select.');
+                if (pwnpowerVariantSelect) pwnpowerVariantSelect.disabled = false;
+                updateButtonStates();
+            }
+        }
+
         // --- Modify setupDownloadLinkListener to handle the GhostESP case ---
         function setupDownloadLinkListener(selectElement, linkElement) {
             if (selectElement) {
@@ -1797,7 +2092,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // setup listener for ghostesp dropdown
         setupDownloadLinkListener(ghostEspVariantSelect, null);
-        
+
+        // setup listener for pwnpower dropdown
+        setupDownloadLinkListener(pwnpowerVariantSelect, null);
+
         // keep the early call for marauder as its section might be simpler
         setupDownloadLinkListener(marauderVariantSelect, marauderDownloadLink); 
 
@@ -1876,16 +2174,28 @@ document.addEventListener('DOMContentLoaded', () => {
         function clearExtractedData() {
             if (extractedGhostEspFiles) {
                 // Clear the stored data
-                extractedGhostEspFiles = null; 
+                extractedGhostEspFiles = null;
                 // Optionally clear the UI text if it was set by extraction
                 // Check if the current text indicates it was auto-loaded before clearing
                 if (appFileInfoElem?.textContent.includes('[Auto-Loaded]')) appFileInfoElem.textContent = 'No file selected';
                 if (bootloaderFileInfoElem?.textContent.includes('[Auto-Loaded]')) bootloaderFileInfoElem.textContent = 'No file selected';
                 if (partitionFileInfoElem?.textContent.includes('[Auto-Loaded]')) partitionFileInfoElem.textContent = 'No file selected';
-                // Clear visual indicators 
+                // Clear visual indicators
                 document.querySelectorAll('.custom-file-upload.file-uploaded').forEach(el => el.classList.remove('file-uploaded'));
-                updateBinaryTypeIndicators(); 
+                updateBinaryTypeIndicators();
                 espLoaderTerminal.writeLine("Cleared auto-loaded GhostESP files.");
+            }
+            if (extractedPwnPowerFiles) {
+                // Clear the stored data
+                extractedPwnPowerFiles = null;
+                // Optionally clear the UI text if it was set by extraction
+                if (appFileInfoElem?.textContent.includes('[Auto-Loaded]')) appFileInfoElem.textContent = 'No file selected';
+                if (bootloaderFileInfoElem?.textContent.includes('[Auto-Loaded]')) bootloaderFileInfoElem.textContent = 'No file selected';
+                if (partitionFileInfoElem?.textContent.includes('[Auto-Loaded]')) partitionFileInfoElem.textContent = 'No file selected';
+                // Clear visual indicators
+                document.querySelectorAll('.custom-file-upload.file-uploaded').forEach(el => el.classList.remove('file-uploaded'));
+                updateBinaryTypeIndicators();
+                espLoaderTerminal.writeLine("Cleared auto-loaded PwnPower files.");
             }
         }
 
@@ -1901,10 +2211,14 @@ document.addEventListener('DOMContentLoaded', () => {
             let hasApp = false, hasBootloader = false, hasPartition = false;
 
             // Check based on the selected method
-            if (method === 'download' && extractedGhostEspFiles) { 
+            if (method === 'download' && extractedGhostEspFiles) {
                 hasApp = !!extractedGhostEspFiles.app.data;
                 hasBootloader = !!extractedGhostEspFiles.bootloader.data;
                 hasPartition = !!extractedGhostEspFiles.partition.data;
+            } else if (method === 'download' && extractedPwnPowerFiles) {
+                hasApp = !!extractedPwnPowerFiles.app.data;
+                hasBootloader = !!extractedPwnPowerFiles.bootloader.data;
+                hasPartition = !!extractedPwnPowerFiles.partition.data;
             } else if (method === 'manual') { // Check the manual method
                  hasApp = appFileInput?.files?.length > 0;
                  hasBootloader = bootloaderFileInput?.files?.length > 0;
@@ -1950,15 +2264,17 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Reset state if switching
             if (method === 'download') {
-                clearManualInputs(); 
-                 if (downloadSourceSelect) downloadSourceSelect.value = ''; 
+                clearManualInputs();
+                 if (downloadSourceSelect) downloadSourceSelect.value = '';
                  ghostEspDownloadSection?.classList.add('d-none');
                  marauderDownloadSection?.classList.add('d-none');
+                 pwnpowerDownloadSection?.classList.add('d-none');
             } else {
                 clearExtractedData();
-                 if (downloadSourceSelect) downloadSourceSelect.value = ''; 
+                 if (downloadSourceSelect) downloadSourceSelect.value = '';
                  ghostEspDownloadSection?.classList.add('d-none');
                  marauderDownloadSection?.classList.add('d-none');
+                 pwnpowerDownloadSection?.classList.add('d-none');
                  document.querySelector('.binary-type-toggle .btn[data-binary="app"]')?.click();
             }
             
@@ -1975,14 +2291,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 const selectedSource = downloadSourceSelect.value;
                 console.log(`[Debug] Download source selected: ${selectedSource}`);
 
-                // Hide both subsections initially
+                // Hide all subsections initially
                 ghostEspDownloadSection?.classList.add('d-none');
                 marauderDownloadSection?.classList.add('d-none');
+                pwnpowerDownloadSection?.classList.add('d-none');
                  if (ghostEspStatusElem) { // Reset GhostESP status text
                      ghostEspStatusElem.textContent = 'Select a variant to begin loading firmware files.';
                      ghostEspStatusElem.className = 'form-text text-muted mt-2'; // Reset class
                  }
-                 clearExtractedData(); // Clear any previously loaded Ghost files
+                 if (pwnpowerStatusElem) { // Reset PwnPower status text
+                     pwnpowerStatusElem.textContent = 'Select a target to begin loading firmware files.';
+                     pwnpowerStatusElem.className = 'form-text text-muted mt-2'; // Reset class
+                 }
+                 clearExtractedData(); // Clear any previously loaded firmware files
+
+                // Update GitHub repo link
+                if (projectRepoLink) {
+                    if (selectedSource === 'ghostesp') {
+                        const link = projectRepoLink.querySelector('a');
+                        link.href = 'https://github.com/jaylikesbunda/Ghost_ESP';
+                        projectRepoLink.classList.remove('d-none');
+                    } else if (selectedSource === 'marauder') {
+                        const link = projectRepoLink.querySelector('a');
+                        link.href = 'https://github.com/justcallmekoko/ESP32Marauder';
+                        projectRepoLink.classList.remove('d-none');
+                    } else if (selectedSource === 'pwnpower') {
+                        const link = projectRepoLink.querySelector('a');
+                        link.href = 'https://github.com/Offensive-Appliances/Research-Projects';
+                        projectRepoLink.classList.remove('d-none');
+                    } else {
+                        projectRepoLink.classList.add('d-none');
+                    }
+                }
 
                 if (selectedSource === 'ghostesp') {
                     console.log('[Debug] Showing GhostESP section and populating options...');
@@ -2008,6 +2348,17 @@ document.addEventListener('DOMContentLoaded', () => {
                              console.error('[Debug] Error populating Marauder options:', err);
                              // Add error feedback for Marauder if needed
                          });
+                } else if (selectedSource === 'pwnpower') {
+                    console.log('[Debug] Showing PwnPower section and populating options...');
+                    pwnpowerDownloadSection?.classList.remove('d-none');
+                    populatePwnPowerDropdown('Offensive-Appliances', 'Research-Projects', '.zip', selectedDevice)
+                        .catch(err => {
+                            console.error('[Debug] Error populating PwnPower options:', err);
+                            if (pwnpowerStatusElem) {
+                                pwnpowerStatusElem.textContent = 'Error loading targets from GitHub.';
+                                pwnpowerStatusElem.className = 'form-text text-danger mt-2 error';
+                             }
+                        });
                 }
                 updateFlashSummary(); // Update summary in case selection changes things
                 updateButtonStates();
@@ -2041,6 +2392,38 @@ document.addEventListener('DOMContentLoaded', () => {
                     populateGhostEspDropdown('jaylikesbunda', 'Ghost_ESP', '.zip', selectedDevice)
                         .catch(err => {
                             console.error('[Debug] Error repopulating GhostESP after toggle:', err);
+                        });
+                }
+            });
+        });
+
+        // --- Event Listeners for PwnPower Release Toggle ---
+        const pwnpowerReleaseToggleBtns = document.querySelectorAll('.pwnpower-toggle');
+        pwnpowerReleaseToggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const releaseType = btn.getAttribute('data-release');
+                console.log(`[Debug] PwnPower release toggle clicked: ${releaseType}`);
+
+                // update toggle button states
+                pwnpowerReleaseToggleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // update global state
+                pwnpowerReleaseType = releaseType;
+
+                // clear current selection
+                if (pwnpowerVariantSelect) {
+                    pwnpowerVariantSelect.selectedIndex = 0;
+                }
+
+                // clear extracted data when switching
+                clearExtractedData();
+
+                // repopulate dropdown with new release type
+                if (pwnpowerDownloadSection && !pwnpowerDownloadSection.classList.contains('d-none')) {
+                    populatePwnPowerDropdown('Offensive-Appliances', 'Research-Projects', '.zip', selectedDevice)
+                        .catch(err => {
+                            console.error('[Debug] Error repopulating PwnPower after toggle:', err);
                         });
                 }
             });
@@ -2189,16 +2572,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Listener for GhostESP is now attached *after* populateRepoOptions finishes in the downloadSourceSelect listener
         function setupDownloadLinkListener(selectElement, linkElement) {
              // Refined check: selectElement is always required.
-             // linkElement is only required if it's NOT the GhostESP select.
+             // linkElement is only required if it's NOT the GhostESP or PwnPower select.
              if (!selectElement) {
                  console.error(`[Debug] setupDownloadLinkListener: Missing selectElement!`);
                  return;
              }
-             if (selectElement.id !== 'ghostEspVariantSelect' && !linkElement) { 
+             if (selectElement.id !== 'ghostEspVariantSelect' && selectElement.id !== 'pwnpowerVariantSelect' && !linkElement) {
                  console.error(`[Debug] setupDownloadLinkListener: Missing linkElement for Select: ${selectElement.id}`);
                  return;
              }
-             // If it IS ghostEspVariantSelect, linkElement can be null, so we proceed.
+             // If it IS ghostEspVariantSelect or pwnpowerVariantSelect, linkElement can be null, so we proceed.
 
             // Remove previous listener if any, to avoid duplicates when re-attaching
 
@@ -2208,15 +2591,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // --- GhostESP Special Handling ---
                 if (selectElement.id === 'ghostEspVariantSelect') {
-                    console.log('[Debug] GhostESP variant selected, attempting load...'); 
+                    console.log('[Debug] GhostESP variant selected, attempting load...');
                     // Remove lines trying to modify the null linkElement for GhostESP
                     // linkElement.href = '#'; // REMOVED
                     // linkElement.classList.add('disabled'); // REMOVED
                     // linkElement.classList.replace('btn-primary', 'btn-secondary'); // REMOVED
-                    loadGhostEspZip(selectedValue); 
+                    loadGhostEspZip(selectedValue);
+                // --- PwnPower Special Handling ---
+                } else if (selectElement.id === 'pwnpowerVariantSelect') {
+                    console.log('[Debug] PwnPower variant selected, attempting load...');
+                    loadPwnPowerZip(selectedValue);
                 // --- Default Handling (Marauder) ---
                 } else if (selectElement.id === 'marauderVariantSelect') { // Be specific
-                    console.log('[Debug] Marauder select changed.'); 
+                    console.log('[Debug] Marauder select changed.');
                     if (selectedValue) {
                         linkElement.href = selectedValue;
                         linkElement.classList.remove('disabled');
@@ -2254,8 +2641,9 @@ document.addEventListener('DOMContentLoaded', () => {
         function hasFirmwareFilesSelected() {
              // Check based on the *selected method*
              if (selectedFirmwareMethod === 'download') {
-                 // If download was chosen, check if Ghost files were extracted
-                 return extractedGhostEspFiles && (extractedGhostEspFiles.app.data || extractedGhostEspFiles.bootloader.data || extractedGhostEspFiles.partition.data);
+                 // If download was chosen, check if Ghost or PwnPower files were extracted
+                 return (extractedGhostEspFiles && (extractedGhostEspFiles.app.data || extractedGhostEspFiles.bootloader.data || extractedGhostEspFiles.partition.data)) ||
+                        (extractedPwnPowerFiles && (extractedPwnPowerFiles.app.data || extractedPwnPowerFiles.bootloader.data || extractedPwnPowerFiles.partition.data));
              } else if (selectedFirmwareMethod === 'manual') {
                  // Original check for manual files
                  return (appFileInput?.files?.length > 0) ||
@@ -2276,7 +2664,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Check based on the *selected method*
             if (selectedFirmwareMethod === 'download' && extractedGhostEspFiles) {
-                // Use extracted GhostESP data 
+                // Use extracted GhostESP data
                  if (extractedGhostEspFiles.app.data) {
                      const address = extractedGhostEspFiles.app.addressInput.value;
                      addSummaryItem('bi-file-earmark-binary', `Application: ${extractedGhostEspFiles.app.name} at ${address} [Auto]`);
@@ -2290,6 +2678,23 @@ document.addEventListener('DOMContentLoaded', () => {
                  if (extractedGhostEspFiles.partition.data) {
                      const address = extractedGhostEspFiles.partition.addressInput.value;
                      addSummaryItem('bi-table', `Partition Table: ${extractedGhostEspFiles.partition.name} at ${address} [Auto]`);
+                     hasBinaries = true;
+                 }
+            } else if (selectedFirmwareMethod === 'download' && extractedPwnPowerFiles) {
+                // Use extracted PwnPower data
+                 if (extractedPwnPowerFiles.app.data) {
+                     const address = extractedPwnPowerFiles.app.address;
+                     addSummaryItem('bi-file-earmark-binary', `Application: ${extractedPwnPowerFiles.app.name} at ${address} [Auto]`);
+                     hasBinaries = true;
+                 }
+                 if (extractedPwnPowerFiles.bootloader.data) {
+                     const address = extractedPwnPowerFiles.bootloader.address;
+                     addSummaryItem('bi-hdd-network', `Bootloader: ${extractedPwnPowerFiles.bootloader.name} at ${address} [Auto]`);
+                     hasBinaries = true;
+                 }
+                 if (extractedPwnPowerFiles.partition.data) {
+                     const address = extractedPwnPowerFiles.partition.address;
+                     addSummaryItem('bi-table', `Partition Table: ${extractedPwnPowerFiles.partition.name} at ${address} [Auto]`);
                      hasBinaries = true;
                  }
             } else if (selectedFirmwareMethod === 'manual') {
