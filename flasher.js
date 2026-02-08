@@ -140,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let ghostEspReleaseType = 'stable'; // track if user wants stable or prerelease
         let ghostEspStableReleases = null; // cache stable releases
         let ghostEspPrereleases = null; // cache prereleases
+let ghostEspPopulateRequestId = 0;
         let pwnpowerReleaseType = 'stable'; // track if user wants stable or prerelease for PwnPower
         let pwnpowerStableReleases = null; // cache stable releases for PwnPower
         let pwnpowerPrereleases = null; // cache prereleases for PwnPower
@@ -1358,6 +1359,8 @@ document.addEventListener('DOMContentLoaded', () => {
             "esp32c5-generic.zip": "Generic ESP32-C5",
             "esp32c5-generic-v01.zip": "Generic ESP32-C5 v01",
             "esp32v5_awok.zip": "Awok V5",
+            "ACE_C5.zip": "ACE C5",
+            "ACE_S3.zip": "ACE S3",
             "ghostboard.zip": "Rabbit Labs' GhostBoard",
             "MarauderV4_FlipperHub.zip": "Marauder V4 / FlipperHub",
             "MarauderV6_AwokDual.zip": "Marauder V6 / Awok Dual",
@@ -1409,6 +1412,8 @@ document.addEventListener('DOMContentLoaded', () => {
             "esp32c5-generic-v01.zip": "esp32c5",
             "esp32c6-generic.zip": "esp32c6",
             "esp32v5_awok.zip": "esp32s2",
+            "ACE_C5.zip": "esp32c5",
+            "ACE_S3.zip": "esp32s3",
             "ghostboard.zip": "esp32c6",
             "MarauderV4_FlipperHub.zip": "esp32",
             "MarauderV6_AwokDual.zip": "esp32",
@@ -1606,6 +1611,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+    const requestId = ++ghostEspPopulateRequestId;
             selectElement.innerHTML = `<option value="">Select a build...</option>`;
             selectElement.disabled = true;
 
@@ -1619,6 +1625,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         throw new Error(`GitHub API Error: ${response.status} ${response.statusText}`);
                     }
                     const releases = await response.json();
+            if (requestId !== ghostEspPopulateRequestId) {
+                return;
+            }
                     if (!releases || releases.length === 0) {
                         espLoaderTerminal.writeLine(`⚠️ No releases found for ${owner}/${repo}.`);
                         selectElement.innerHTML = `<option value="">No releases found</option>`;
@@ -1637,6 +1646,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
+        if (requestId !== ghostEspPopulateRequestId) {
+            return;
+        }
                 // populate based on current toggle state
                 const targetRelease = ghostEspReleaseType === 'stable' ? ghostEspStableReleases : ghostEspPrereleases;
                 
