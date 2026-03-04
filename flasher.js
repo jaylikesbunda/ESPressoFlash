@@ -1348,6 +1348,10 @@ let ghostEspPopulateRequestId = 0;
             });
         });
 
+        const GHOST_ESP_OWNER = 'GhostESP-Revival';
+        const GHOST_ESP_REPO = 'GhostESP';
+        const isGhostEspRepo = (repo) => repo === GHOST_ESP_REPO || repo === 'Ghost_ESP';
+
         // add a mapping for nice names (based on the provided yaml)
         const ghostEspNiceNames = {
             "esp32-generic.zip": "Generic ESP32",
@@ -1454,7 +1458,7 @@ let ghostEspPopulateRequestId = 0;
             assets.forEach(asset => {
                 if (asset.name.endsWith(fileExtension)) {
                     // --- Filtering Logic for GhostESP ---
-                    if (repo === 'Ghost_ESP' && filterChip) {
+                    if (isGhostEspRepo(repo) && filterChip) {
                         const assetTarget = ghostEspZipToTarget[asset.name];
                         const mappedChip = ghostEspChipMapping[assetTarget];
                         if (mappedChip !== filterChip) {
@@ -1464,7 +1468,7 @@ let ghostEspPopulateRequestId = 0;
                     // --- End Filtering Logic ---
 
                     // --- Special Handling for esp32-generic.zip ---
-                    if (repo === 'Ghost_ESP' && asset.name === "esp32-generic.zip") {
+                    if (isGhostEspRepo(repo) && asset.name === "esp32-generic.zip") {
                         // Manually create both options for this specific ZIP
                         const option1 = document.createElement('option');
                         option1.value = asset.browser_download_url;
@@ -1482,7 +1486,7 @@ let ghostEspPopulateRequestId = 0;
                     // --- End Special Handling ---
 
                     // --- Special Handling for CYD2USB2.4Inch.zip ---
-                    if (repo === 'Ghost_ESP' && asset.name === "CYD2USB2.4Inch.zip") {
+                    if (isGhostEspRepo(repo) && asset.name === "CYD2USB2.4Inch.zip") {
                         const option1 = document.createElement('option');
                         option1.value = asset.browser_download_url;
                         option1.textContent = "CYD 2.4 Inch USB (ESP32)";
@@ -1504,7 +1508,7 @@ let ghostEspPopulateRequestId = 0;
                     option.value = asset.browser_download_url;
 
                     // Use nice name if available for GhostESP, otherwise use asset name
-                    option.textContent = (repo === 'Ghost_ESP' && ghostEspNiceNames[asset.name])
+                    option.textContent = (isGhostEspRepo(repo) && ghostEspNiceNames[asset.name])
                                          ? ghostEspNiceNames[asset.name]
                                          : asset.name;
 
@@ -1586,7 +1590,7 @@ let ghostEspPopulateRequestId = 0;
 
                 if (!optionsAdded) {
                     let message = `No suitable ${fileExtension} assets found`;
-                    if (repo === 'Ghost_ESP' && filterChip) {
+                    if (isGhostEspRepo(repo) && filterChip) {
                         message += ` for the selected chip (${filterChip})`;
                     }
                      message += ` in the latest stable or pre-releases for ${owner}/${repo}.`;
@@ -2147,7 +2151,7 @@ let ghostEspPopulateRequestId = 0;
                 } else if (selectedSource === 'ghostesp') {
                      console.log('[Debug] Source is ghostesp, showing section and populating options...');
                     ghostEspDownloadSection?.classList.remove('d-none');
-                    populateGhostEspDropdown('Spooks4576', 'Ghost_ESP', '.zip', selectedDevice)
+                    populateGhostEspDropdown(GHOST_ESP_OWNER, GHOST_ESP_REPO, '.zip', selectedDevice)
                         .catch(err => {
                             console.error('[Debug] Error during populateGhostEspDropdown:', err);
                         });
@@ -2321,7 +2325,7 @@ let ghostEspPopulateRequestId = 0;
                 if (projectRepoLink) {
                     if (selectedSource === 'ghostesp') {
                         const link = projectRepoLink.querySelector('a');
-                        link.href = 'https://github.com/jaylikesbunda/Ghost_ESP';
+                        link.href = `https://github.com/${GHOST_ESP_OWNER}/${GHOST_ESP_REPO}`;
                         projectRepoLink.classList.remove('d-none');
                     } else if (selectedSource === 'marauder') {
                         const link = projectRepoLink.querySelector('a');
@@ -2339,7 +2343,7 @@ let ghostEspPopulateRequestId = 0;
                 if (selectedSource === 'ghostesp') {
                     console.log('[Debug] Showing GhostESP section and populating options...');
                     ghostEspDownloadSection?.classList.remove('d-none');
-                    populateGhostEspDropdown('jaylikesbunda', 'Ghost_ESP', '.zip', selectedDevice)
+                    populateGhostEspDropdown(GHOST_ESP_OWNER, GHOST_ESP_REPO, '.zip', selectedDevice)
                         .catch(err => {
                             console.error('[Debug] Error populating GhostESP options:', err);
                             if (ghostEspStatusElem) {
@@ -2401,7 +2405,7 @@ let ghostEspPopulateRequestId = 0;
                 
                 // repopulate dropdown with new release type
                 if (ghostEspDownloadSection && !ghostEspDownloadSection.classList.contains('d-none')) {
-                    populateGhostEspDropdown('jaylikesbunda', 'Ghost_ESP', '.zip', selectedDevice)
+                    populateGhostEspDropdown(GHOST_ESP_OWNER, GHOST_ESP_REPO, '.zip', selectedDevice)
                         .catch(err => {
                             console.error('[Debug] Error repopulating GhostESP after toggle:', err);
                         });
