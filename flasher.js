@@ -123,8 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const downloadSourceSelect = getElementById('downloadSourceSelect');
         const ghostEspStatusElem = getElementById('ghostEspStatus');
         const pwnpowerStatusElem = getElementById('pwnpowerStatus');
-        const projectRepoLinkGitLab = getElementById('projectRepoLinkGitLab');
-
         // --- Let Declarations (Moved Up) ---
         let espLoader = null;
         let transport = null;
@@ -2376,14 +2374,6 @@ let ghostEspPopulateRequestId = 0;
                         projectRepoLink.classList.remove('d-none');
                     } else {
                         projectRepoLink.classList.add('d-none');
-                    }
-                }
-
-                if (projectRepoLinkGitLab) {
-                    if (selectedSource === 'ghostesp') {
-                        projectRepoLinkGitLab.classList.remove('d-none');
-                    } else {
-                        projectRepoLinkGitLab.classList.add('d-none');
                     }
                 }
 

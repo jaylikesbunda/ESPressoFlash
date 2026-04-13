@@ -430,10 +430,10 @@ h2 {
 }
 
 .card {
-    border: none;
-    border-radius: 0;
-    background-color: transparent;
-    box-shadow: none;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--card-bg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     margin-bottom: 1rem;
     overflow: hidden;
     transition: var(--transition);
@@ -441,7 +441,7 @@ h2 {
 
 .card-body {
     background-color: transparent;
-    padding: 0;
+    padding: 1rem;
 }
 
 .card:hover {
