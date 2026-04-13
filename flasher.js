@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let extractedPwnPowerFiles = null;
         let selectedFirmwareMethod = null; // To track 'download' or 'manual'
         let ghostEspReleaseType = 'stable'; // track if user wants stable or prerelease
-        let ghostEspSource = 'cdn'; // 'cdn' or 'github'
+        let ghostEspSource = 'github'; // 'cdn' or 'github'
         let ghostEspStableReleases = null; // cache stable releases
         let ghostEspPrereleases = null; // cache prereleases
 let ghostEspPopulateRequestId = 0;
@@ -1340,7 +1340,7 @@ let ghostEspPopulateRequestId = 0;
         const GHOST_ESP_MANIFEST_URL = `https://raw.githubusercontent.com/${GHOST_ESP_OWNER}/${GHOST_ESP_REPO}/${GHOST_ESP_MANIFEST_BRANCH}/firmware-manifest.json`;
         const GHOST_ESP_CDN_STABLE_URL = 'https://cdn.arcdatabase.net/manifests/stable.json';
         const GHOST_ESP_CDN_PRERELEASE_URL = 'https://cdn.arcdatabase.net/manifests/prerelease.json';
-        const CF_WORKER_PROXY = 'https://fragrant-flower-ba0b.creepersbeast.workers.dev/?url=';
+        const CF_WORKER_PROXY = 'https://super-breeze-c8cd.flavouredjelly.workers.dev/?url=';
         const isGhostEspRepo = (repo) => repo === GHOST_ESP_REPO || repo === 'Ghost_ESP';
 
         // add a mapping for nice names (based on the provided yaml)

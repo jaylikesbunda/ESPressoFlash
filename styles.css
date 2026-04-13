@@ -1413,6 +1413,7 @@ footer a:hover {
 /* release toggle for ghostesp */
 .release-toggle {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     padding: 0.25rem;
     background-color: rgba(255, 255, 255, 0.03);
@@ -1478,4 +1479,36 @@ footer a:hover {
 
 .ghostesp-source-btn i {
     font-size: 1rem;
+}
+
+.source-recommended {
+    display: block;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--success-color);
+    background: rgba(46, 204, 113, 0.2);
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    margin-top: 0.25rem;
+}
+
+.github-btn-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.source-recommended {
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--success-color);
+    background: rgba(46, 204, 113, 0.2);
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.5rem;
 }
